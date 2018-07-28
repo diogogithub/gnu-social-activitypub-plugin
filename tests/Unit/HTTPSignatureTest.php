@@ -15,9 +15,9 @@ use HttpSignatures\GuzzleHttpSignatures;
 
 class HTTPSignatureTest extends TestCase
 {
-   /**
-     * @var Context
-     */
+    /**
+      * @var Context
+      */
     private $context;
     /**
      * @var Client
@@ -114,7 +114,8 @@ class HTTPSignatureTest extends TestCase
             $request->getHeader('Authorization')
         );
     }
-    public function getVerifyGuzzleRequestVectors() {
+    public function getVerifyGuzzleRequestVectors()
+    {
         return [
             /* path, headers */
             ['/path?query=123', ['date' => 'today', 'accept' => 'llamas']],

@@ -53,16 +53,14 @@ class Activitypub_rsa extends Managed_DataObject
         return [
                 'fields' => [
                     'profile_id'  => ['type' => 'integer'],
-                    'private_key' => ['type' => 'varchar',  'length'   => 191],
-                    'public_key'  => ['type' => 'varchar',  'length'   => 191],
+                    'private_key' => ['type' => 'text'],
+                    'public_key'  => ['type' => 'text', 'not null' => true],
                     'created'     => ['type' => 'datetime', 'not null' => true],
                     'modified'    => ['type' => 'datetime', 'not null' => true],
                 ],
                 'primary key' => ['profile_id'],
                 'unique keys' => [
                     'Activitypub_rsa_profile_id_key'  => ['profile_id'],
-                    'Activitypub_rsa_private_key_key' => ['private_key'],
-                    'Activitypub_rsa_public_key_key'  => ['public_key'],
                 ],
                 'foreign keys' => [
                     'Activitypub_profile_profile_id_fkey' => ['profile', ['profile_id' => 'id']],

@@ -70,7 +70,7 @@ class ActivityPubPlugin extends Plugin
      */
     public static function actor_url($profile)
     {
-        return actor_uri($profile)."/";
+        return ActivityPubPlugin::actor_uri($profile)."/";
     }
 
     /**

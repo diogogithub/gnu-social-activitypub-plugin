@@ -225,7 +225,7 @@ class Activitypub_explorer
      * @param array $res remote response
      * @return boolean success state
      */
-    private static function validate_remote_response($res)
+    public static function validate_remote_response($res)
     {
         if (!isset($res['id'], $res['preferredUsername'], $res['name'], $res['summary'], $res['inbox'], $res['publicKey']['publicKeyPem'])) {
             return false;

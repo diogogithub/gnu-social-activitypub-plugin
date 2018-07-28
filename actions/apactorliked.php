@@ -51,13 +51,11 @@ class apActorLikedAction extends ManagedAction
      */
     protected function handle()
     {
-        $nickname = $this->trimmed('nickname');
         try {
-            $user    = User::getByNickname($nickname);
-            $profile = $user->getProfile();
-            $url     = $profile->profileurl;
+            $profile = Profile::getByID($this->trimmed('id'));
+            $url     = ActivityPubPlugin::actor_url($profile);
         } catch (Exception $e) {
-            ActivityPubReturn::error('Invalid username.');
+            ActivityPubReturn::error('Invalid Actor URI.', 404);
         }
 
         $limit    = intval($this->trimmed('limit'));
@@ -73,7 +71,7 @@ class apActorLikedAction extends ManagedAction
             $limit = 80;
         }
 
-        $fave = $this->fetch_faves($user->getID(), $limit, $since_id, $max_id);
+        $fave = $this->fetch_faves($profile->getID(), $limit, $since_id, $max_id);
 
         $faves = array();
         while ($fave->fetch()) {

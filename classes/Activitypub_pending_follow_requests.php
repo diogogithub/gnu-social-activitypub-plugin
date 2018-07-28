@@ -53,21 +53,21 @@ class Activitypub_pending_follow_requests extends Managed_DataObject
      */
     public static function schemaDef()
     {
-        return array(
-                'fields' => array(
-                    'local_profile_id'  => array('type' => 'integer', 'not null' => true),
-                    'remote_profile_id' => array('type' => 'integer', 'not null' => true),
-                    'relation_id'       => array('type' => 'serial',  'not null' => true),
-                ),
-                'primary key' => array('relation_id'),
-                'unique keys' => array(
-                    'Activitypub_pending_follow_requests_relation_id_key' => array('relation_id'),
-                ),
-                'foreign keys' => array(
-                    'Activitypub_pending_follow_requests_local_profile_id_fkey'  => array('profile', array('local_profile_id' => 'id')),
-                    'Activitypub_pending_follow_requests_remote_profile_id_fkey' => array('profile', array('remote_profile_id' => 'id')),
-                ),
-            );
+        return [
+            'fields' => [
+                'local_profile_id'  => ['type' => 'integer', 'not null' => true],
+                'remote_profile_id' => ['type' => 'integer', 'not null' => true],
+                'relation_id'       => ['type' => 'serial',  'not null' => true],
+            ],
+            'primary key' => ['relation_id'],
+            'unique keys' => [
+                'Activitypub_pending_follow_requests_relation_id_key' => ['relation_id'],
+            ],
+            'foreign keys' => [
+                'Activitypub_pending_follow_requests_local_profile_id_fkey'  => ['profile', ['local_profile_id' => 'id']],
+                'Activitypub_pending_follow_requests_remote_profile_id_fkey' => ['profile', ['remote_profile_id' => 'id']],
+            ],
+        ];
     }
 
     public function __construct($actor, $remote_actor)

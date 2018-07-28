@@ -38,7 +38,7 @@ if (!defined('GNUSOCIAL')) {
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      http://www.gnu.org/software/social/
  */
-class Activitypub_profile extends Profile
+class Activitypub_profile extends Managed_DataObject
 {
     public $__table = 'Activitypub_profile';
 
@@ -50,24 +50,23 @@ class Activitypub_profile extends Profile
      */
     public static function schemaDef()
     {
-        return array(
-                'fields' => array(
-                    'uri' => array('type' => 'varchar', 'length' => 191, 'not null' => true),
-                    'profile_id' => array('type' => 'integer'),
-                    'inboxuri' => array('type' => 'varchar', 'length' => 191),
-                    'sharedInboxuri' => array('type' => 'varchar', 'length' => 191),
-                    'created' => array('type' => 'datetime', 'not null' => true),
-                    'modified' => array('type' => 'datetime', 'not null' => true),
-                ),
-                'primary key' => array('uri'),
-                'unique keys' => array(
-                    'Activitypub_profile_profile_id_key' => array('profile_id'),
-                    'Activitypub_profile_inboxuri_key' => array('inboxuri'),
-                ),
-                'foreign keys' => array(
-                    'Activitypub_profile_profile_id_fkey' => array('profile', array('profile_id' => 'id')),
-                ),
-            );
+        return [
+            'fields' => [
+                'uri' => ['type' => 'text', 'not null' => true],
+                'profile_id' => ['type' => 'integer'],
+                'inboxuri' => ['type' => 'text', 'not null' => true],
+                'sharedInboxuri' => ['type' => 'text'],
+                'created' => ['type' => 'datetime', 'not null' => true],
+                'modified' => ['type' => 'datetime', 'not null' => true],
+            ],
+            'primary key' => ['profile_id'],
+            'unique keys' => [
+                'Activitypub_profile_profile_id_key' => ['profile_id'],
+            ],
+            'foreign keys' => [
+                'Activitypub_profile_profile_id_fkey' => ['profile', ['profile_id' => 'id']],
+            ],
+        ];
     }
 
     /**
@@ -172,6 +171,7 @@ class Activitypub_profile extends Profile
 
         if ($ok === false) {
             $profile->query('ROLLBACK');
+            $this->query('ROLLBACK');
             throw new ServerException('Cannot save ActivityPub profile.');
         }
     }
@@ -215,8 +215,15 @@ class Activitypub_profile extends Profile
             }
         }
 
-        foreach ($profile as $key => $value) {
-            $aprofile->$key = $value;
+        $fields = [
+                    'uri'      => 'profileurl',
+                    'nickname' => 'nickname',
+                    'fullname' => 'fullname',
+                    'bio'      => 'bio'
+                    ];
+
+        foreach ($fields as $af => $pf) {
+            $aprofile->$af = $profile->$pf;
         }
 
         return $aprofile;

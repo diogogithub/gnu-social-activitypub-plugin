@@ -68,10 +68,11 @@ class apActorFollowersAction extends ManagedAction
             ActivityPubReturn::error('Invalid page number.');
         }
 
+        $since = ($page - 1) * PROFILES_PER_MINILIST;
+        $limit = (($page - 1) == 0 ? 1 : $page) * PROFILES_PER_MINILIST;
+
         /* Fetch Followers */
         try {
-            $since = ($page - 1) * PROFILES_PER_MINILIST;
-            $limit = (($page - 1) == 0 ? 1 : $page) * PROFILES_PER_MINILIST;
             $sub   = $profile->getSubscribers($since, $limit);
         } catch (NoResultException $e) {
             ActivityPubReturn::error('This user has no followers.');
