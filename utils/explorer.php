@@ -32,7 +32,7 @@ if (!defined('GNUSOCIAL')) {
 /**
  * ActivityPub's own Explorer
  *
- * Allows to discovery new (or the same) ActivityPub profiles
+ * Allows to discovery new (or the same) Profiles (both local or remote)
  *
  * @category  Plugin
  * @package   GNUsocial
@@ -55,6 +55,7 @@ class Activitypub_explorer
      */
     public function lookup($url)
     {
+        common_debug("Explorer started now looking for ".$url);
         $this->discovered_actor_profiles = array();
 
         return $this->_lookup($url);
@@ -95,9 +96,6 @@ class Activitypub_explorer
         $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
         $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
         $response  = $client->get($url, $headers);
-        if (!$response->isOk()) {
-            throw new Exception("Invalid Actor URL.");
-        }
         $res = json_decode($response->getBody(), JSON_UNESCAPED_SLASHES);
         if (self::validate_remote_response($res)) {
             $this->temp_res = $res;
@@ -108,7 +106,7 @@ class Activitypub_explorer
     }
 
     /**
-     * Get a local user profiles from its URL and joins it on
+     * Get a local user profile from its URL and joins it on
      * $this->discovered_actor_profiles
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
@@ -117,6 +115,11 @@ class Activitypub_explorer
      */
     private function grab_local_user($uri, $online = false)
     {
+        if ($online) {
+            common_debug("Explorer is searching locally for ".$uri. " online.");
+        } else {
+            common_debug("Explorer is searching locally for ".$uri. " offline.");
+        }
         // Ensure proper remote URI
         // If an exception occurs here it's better to just leave everything
         // break than to continue processing
@@ -126,14 +129,31 @@ class Activitypub_explorer
 
         // Try standard ActivityPub route
         // Is this a known filthy little mudblood?
-        $aprofile = Activitypub_profile::getKV("uri", $uri);
+        $aprofile = self::get_aprofile_by_url($uri);
         if ($aprofile instanceof Activitypub_profile) {
             $profile = $aprofile->local_profile();
-
+            common_debug("Explorer found a local Aprofile for ".$uri);
             // We found something!
             $this->discovered_actor_profiles[]= $profile;
             unset($this->temp_res); // IMPORTANT to avoid _dangerous_ noise in the Explorer system
             return true;
+        } else {
+            common_debug("Explorer didn't find a local Aprofile for ".$uri);
+            // Well, maybe it is a pure blood?
+            // Iff, we are in the same instance:
+            $ACTIVITYPUB_BASE_INSTANCE_URI_length = strlen(ACTIVITYPUB_BASE_INSTANCE_URI);
+            if (substr($uri, 0, $ACTIVITYPUB_BASE_INSTANCE_URI_length) == ACTIVITYPUB_BASE_INSTANCE_URI) {
+                try {
+                    $profile = Profile::getByID(intval(substr($uri, $ACTIVITYPUB_BASE_INSTANCE_URI_length)));
+
+                    // We found something!
+                    $this->discovered_actor_profiles[]= $profile;
+                    unset($this->temp_res); // IMPORTANT to avoid _dangerous_ noise in the Explorer system
+                    return true;
+                } catch (Exception $e) {
+                    // Let the exception go on its merry way.
+                }
+            }
         }
 
         // If offline grabbing failed, attempt again with online resources
@@ -154,15 +174,13 @@ class Activitypub_explorer
      */
     private function grab_remote_user($url)
     {
+        common_debug("Explorer is grabbing a remote profile for ".$url);
         if (!isset($this->temp_res)) {
             $client    = new HTTPClient();
             $headers   = array();
             $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
             $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
             $response  = $client->get($url, $headers);
-            if (!$response->isOk()) {
-                throw new Exception("Invalid Actor URL.");
-            }
             $res = json_decode($response->getBody(), JSON_UNESCAPED_SLASHES);
         } else {
             $res = $this->temp_res;
@@ -232,6 +250,32 @@ class Activitypub_explorer
         }
 
         return true;
+    }
+
+    /**
+     * Get a ActivityPub Profile from it's uri
+     * Unfortunately GNU Social cache is not truly reliable when handling
+     * potential ActivityPub remote profiles, as so it is important to use
+     * this hacky workaround (at least for now)
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param string $v URL
+     * @return boolean|Activitypub_profile false if fails | Aprofile object if successful
+     */
+    public static function get_aprofile_by_url($v)
+    {
+        $i = Managed_DataObject::getcached("Activitypub_profile", "uri", $v);
+        if (empty($i)) { // false = cache miss
+            $i = new Activitypub_profile;
+            $result = $i->get("uri", $v);
+            if ($result) {
+                // Hit!
+                $i->encache();
+            } else {
+                return false;
+            }
+        }
+        return $i;
     }
 
     /**

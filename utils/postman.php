@@ -168,12 +168,12 @@ class Activitypub_postman
     public function create($notice)
     {
         $data = Activitypub_create::create_to_array(
-                    $notice->getUri(),
+                    $notice->getUrl(),
                     ActivityPubPlugin::actor_uri($this->actor),
-                    Activitypub_notice::notice_to_array($notice)
+                    array_merge(Activitypub_notice::notice_to_array($notice), ['cc' => common_local_url('apActorFollowers', ['id' => $this->actor->getID()]),])
                 );
         if (isset($notice->reply_to)) {
-            $data["object"]["reply_to"] = $notice->getParent()->getUri();
+            $data["object"]["reply_to"] = $notice->getParent()->getUrl();
         }
         $this->client->setBody(json_encode($data));
         foreach ($this->to_inbox() as $inbox) {

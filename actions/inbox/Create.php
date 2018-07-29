@@ -32,8 +32,10 @@ if (!defined('GNUSOCIAL')) {
 $valid_object_types = array("Note");
 
 // Validate data
-if (!isset($data->id)) {
-    ActivityPubReturn::error("Id not specified.");
+if (!isset($data->object->id)) {
+    ActivityPubReturn::error("Object ID not specified.");
+} elseif (!filter_var($data->object->id, FILTER_VALIDATE_URL)) {
+    ActivityPubReturn::error("Invalid Object ID.");
 }
 if (!(isset($data->object->type) && in_array($data->object->type, $valid_object_types))) {
     ActivityPubReturn::error("Invalid Object type.");
@@ -60,19 +62,19 @@ $act->actor = $actor_profile->asActivityObject();
 $act->context = new ActivityContext();
 
 // Is this a reply?
-if (isset($data->object->reply_to)) {
+if (isset($data->object->inReplyTo)) {
     try {
-        $reply_to = Notice::getByUri($data->object->reply_to);
+        $inReplyTo = ActivityPubPlugin::get_local_notice_from_url($data->object->inReplyTo);
     } catch (Exception $e) {
-        ActivityPubReturn::error("Invalid Object reply_to value.");
+        ActivityPubReturn::error("Invalid Object inReplyTo value.");
     }
-    $act->context->replyToID  = $reply_to->getUri();
-    $act->context->replyToUrl = $reply_to->getUrl();
+    $act->context->replyToID  = $inReplyTo->getUri();
+    $act->context->replyToUrl = $inReplyTo->getUrl();
 } else {
-    $reply_to = null;
+    $inReplyTo = null;
 }
 
-$act->context->attention = common_get_attentions($content, $actor_profile, $reply_to);
+$act->context->attention = common_get_attentions($content, $actor_profile, $inReplyTo);
 
 $discovery = new Activitypub_explorer;
 if ($to_profiles == "https://www.w3.org/ns/activitystreams#Public") {
@@ -86,22 +88,43 @@ if (is_array($data->object->to)) {
         try {
             $to_profiles = array_merge($to_profiles, $discovery->lookup($to_url));
         } catch (Exception $e) {
-            // XXX: Invalid actor found, not sure how we handle those
+            // Invalid actor found, just let it go.
         }
     }
 } elseif (empty($data->object->to) || in_array($data->object->to, $public_to)) {
     // No need to do anything else at this point, let's just break out the if
 } else {
     try {
-        $to_profiles[]= $discovery->lookup($data->object->to);
+        $to_profiles = array_merge($to_profiles, $discovery->lookup($data->object->to));
     } catch (Exception $e) {
-        ActivityPubReturn::error("Invalid Actor.", 404);
+        // Invalid actor found, just let it go.
     }
 }
+// Generate Cc objects
+if (isset($data->object->cc) && is_array($data->object->cc)) {
+    // Remove duplicates from Cc actors set
+    array_unique($data->object->to);
+    foreach ($data->object->cc as $cc_url) {
+        try {
+            $to_profiles = array_merge($to_profiles, $discovery->lookup($cc_url));
+        } catch (Exception $e) {
+            // Invalid actor found, just let it go.
+        }
+    }
+} elseif (empty($data->object->cc) || in_array($data->object->cc, $public_to)) {
+    // No need to do anything else at this point, let's just break out the if
+} else {
+    try {
+        $to_profiles = array_merge($to_profiles, $discovery->lookup($data->object->cc));
+    } catch (Exception $e) {
+        // Invalid actor found, just let it go.
+    }
+}
+
 unset($discovery);
 
-foreach ($to_profiles as $to) {
-    $act->context->attention[ActivityPubPlugin::actor_uri($to)] = "http://activitystrea.ms/schema/1.0/person";
+foreach ($to_profiles as $tp) {
+    $act->context->attention[ActivityPubPlugin::actor_uri($tp)] = "http://activitystrea.ms/schema/1.0/person";
 }
 
 // Reject notice if it is too long (without the HTML)
@@ -116,7 +139,7 @@ ToSelector::fillActivity($this, $act, $options);
 
 $actobj = new ActivityObject();
 $actobj->type = ActivityObject::NOTE;
-$actobj->content = common_render_content($content, $actor_profile, $reply_to);
+$actobj->content = common_render_content($content, $actor_profile, $inReplyTo);
 
 // Finally add the activity object to our activity
 $act->objects[] = $actobj;

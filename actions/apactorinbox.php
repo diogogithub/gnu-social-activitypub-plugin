@@ -57,6 +57,10 @@ class apActorInboxAction extends ManagedAction
             ActivityPubReturn::error('Invalid Actor URI.', 404);
         }
 
+        if (!$profile->isLocal()) {
+            ActivityPubReturn::error("This is not a local user.");
+        }
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             ActivityPubReturn::error("C2S not implemented just yet.");
         }

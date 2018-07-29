@@ -34,8 +34,13 @@ if (!isset($data->object->id)) {
 }
 
 try {
-    Fave::addNew($actor_profile, Notice::getByUri($data->object->id));
-    ActivityPubReturn::answer(Activitypub_like::like_to_array(Activitypub_notice::notice_to_array($data->actor, json_decode($data->object))));
+    try {
+        $object_notice = ActivityPubPlugin::get_local_notice_from_url($data->object->id);
+    } catch (Exception $e) {
+        ActivityPubReturn::error("Invalid Object ID value.");
+    }
+    Fave::addNew($actor_profile, $object_notice);
+    ActivityPubReturn::answer(Activitypub_like::like_to_array($data->actor, Activitypub_notice::notice_to_array($object_notice)));
 } catch (Exception $e) {
     ActivityPubReturn::error($e->getMessage(), 403);
 }

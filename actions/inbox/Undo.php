@@ -41,14 +41,14 @@ case "Like":
             if (!isset($data->object->object->id)) {
                 ActivityPubReturn::error("Notice ID was not specified.");
             }
-            Fave::removeEntry($actor_profile, Notice::getByUri($data->object->object->id));
+            Fave::removeEntry($actor_profile, ActivityPubPlugin::get_local_notice_from_url($data->object->object->id));
             // Notice disfavorited successfully.
             ActivityPubReturn::answer(
                     Activitypub_undo::undo_to_array(
                                             Activitypub_like::like_to_array(
                                              Activitypub_notice::notice_to_array(
                                                  $actor_profile->getUrl(),
-                                                                                  $data->object->object
+                                                 $data->object->object
                                              )
                                             )
                 )

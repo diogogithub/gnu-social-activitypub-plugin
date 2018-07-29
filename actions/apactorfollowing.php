@@ -58,6 +58,10 @@ class apActorFollowingAction extends ManagedAction
             ActivityPubReturn::error('Invalid Actor URI.', 404);
         }
 
+        if (!$profile->isLocal()) {
+            ActivityPubReturn::error("This is not a local user.");
+        }
+
         if (!isset($_GET["page"])) {
             $page = 1;
         } else {
@@ -93,7 +97,7 @@ class apActorFollowingAction extends ManagedAction
         /* Get followed' URLs */
         $subs = array();
         while ($sub->fetch()) {
-            $subs[] = $sub->profileurl;
+            $subs[] = ActivityPubPlugin::actor_uri($sub);
         }
 
         $res = [

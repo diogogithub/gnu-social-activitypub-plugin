@@ -16,8 +16,8 @@ use HttpSignatures\GuzzleHttpSignatures;
 class HTTPSignatureTest extends TestCase
 {
     /**
-      * @var Context
-      */
+     * @var Context
+     */
     private $context;
     /**
      * @var Client

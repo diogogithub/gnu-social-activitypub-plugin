@@ -49,11 +49,17 @@ class ProfileObjectTest extends TestCase
         /* Test get_inbox() */
         $this->assertTrue($aprofile->sharedInboxuri == $aprofile->get_inbox());
 
-        /* Test get_uri() */
-        $this->assertTrue($aprofile->uri == $aprofile->get_uri());
+        /* Test getUri() */
+        $this->assertTrue($aprofile->uri == $aprofile->getUri());
 
-        /* Test get_from_uri() */
-        $this->assertTrue($this->compare_aprofiles($aprofile, \Activitypub_profile::get_from_uri($aprofile->uri)));
+        /* Test getUrl() */
+        $this->assertTrue($profile->getUrl() == $aprofile->getUrl());
+
+        /* Test getID() */
+        $this->assertTrue($profile->getID() == $aprofile->getID());
+
+        /* Test fromUri() */
+        $this->assertTrue($this->compare_aprofiles($aprofile, \Activitypub_profile::fromUri($aprofile->uri)));
 
         /* Remove Remote User Test 1 */
         $old_id = $profile->getID();
@@ -124,20 +130,28 @@ class ProfileObjectTest extends TestCase
 
     private function compare_aprofiles(\Activitypub_profile $a, \Activitypub_profile $b)
     {
-        if (($av = $a->get_uri()) != ($bv = $b->get_uri())) {
+        if (($av = $a->getUri()) != ($bv = $b->getUri())) {
             throw new Exception('Compare AProfiles 1 Fail: $a: '.$av.' is different from $b: '.$bv);
         }
 
-        if (($av = $a->profile_id) != ($bv = $b->profile_id)) {
+        if (($av = $a->getUrl()) != ($bv = $b->getUrl())) {
             throw new Exception('Compare AProfiles 2 Fail: $a: '.$av.' is different from $b: '.$bv);
         }
 
-        if (($av = $a->inboxuri) != ($bv = $b->inboxuri)) {
+        if (($av = $a->getID()) != ($bv = $b->getID())) {
             throw new Exception('Compare AProfiles 3 Fail: $a: '.$av.' is different from $b: '.$bv);
         }
 
+        if (($av = $a->profile_id) != ($bv = $b->profile_id)) {
+            throw new Exception('Compare AProfiles 4 Fail: $a: '.$av.' is different from $b: '.$bv);
+        }
+
+        if (($av = $a->inboxuri) != ($bv = $b->inboxuri)) {
+            throw new Exception('Compare AProfiles 5 Fail: $a: '.$av.' is different from $b: '.$bv);
+        }
+
         if (($av = $a->sharedInboxuri) != ($bv = $b->sharedInboxuri)) {
-            throw new Exception('Compare AProfiles 1 Fail: $a: '.$av.' is different from $b: '.$bv);
+            throw new Exception('Compare AProfiles 6 Fail: $a: '.$av.' is different from $b: '.$bv);
         }
 
         return true;

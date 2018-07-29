@@ -34,7 +34,6 @@ if (!defined('GNUSOCIAL')) {
  *
  * @category  Plugin
  * @package   GNUsocial
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      http://www.gnu.org/software/social/
@@ -44,13 +43,13 @@ class Activitypub_notice extends Managed_DataObject
     /**
      * Generates a pretty notice from a Notice object
      *
-     * @author Daniel Supernault <danielsupernault@gmail.com>
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Notice $notice
      * @return pretty array to be used in a response
      */
     public static function notice_to_array($notice)
     {
+        $profile = $notice->getProfile();
         $attachments = array();
         foreach ($notice->attachments() as $attachment) {
             $attachments[] = Activitypub_attachment::attachment_to_array($attachment);
@@ -63,7 +62,7 @@ class Activitypub_notice extends Managed_DataObject
             }
         }
 
-        $to = array();
+        $to = [];
         foreach ($notice->getAttentionProfiles() as $to_profile) {
             $to[] = $to_profile->getUri();
         }
@@ -72,18 +71,20 @@ class Activitypub_notice extends Managed_DataObject
         }
 
         $item = [
-                        'id'           => $notice->getUri(),
-                        'type'         => 'Note',
-                        'actor'        => $notice->getProfile()->getUrl(),
-                        'published'    => $notice->getCreated(),
-                        'to'           => $to,
-                        'content'      => $notice->getContent(),
-                        'url'          => $notice->getUrl(),
-                        'reply_to'     => empty($notice->reply_to) ? null : Notice::getById($notice->reply_to)->getUri(),
-                        'is_local'     => $notice->isLocal(),
-                        'conversation' => $notice->getConversationUrl(),
-                        'attachment'   => $attachments,
-                        'tag'          => $tags
+                        'id'               => $notice->getUrl(),
+                        'type'             => 'Note',
+                        'inReplyTo'        => empty($notice->reply_to) ? null : Notice::getById($notice->reply_to)->getUrl(),
+                        'published'        => $notice->getCreated(),
+                        'url'              => $notice->getUrl(),
+                        'atributedTo'      => ActivityPubPlugin::actor_uri($profile),
+                        'to'               => $to,
+                        'atomUri'          => $notice->getUrl(),
+                        'inReplyToAtomUri' => empty($notice->reply_to) ? null : Notice::getById($notice->reply_to)->getUrl(),
+                        'conversation'     => $notice->getConversationUrl(),
+                        'content'          => $notice->getContent(),
+                        'is_local'         => $notice->isLocal(),
+                        'attachment'       => $attachments,
+                        'tag'              => $tags
                 ];
 
         return $item;

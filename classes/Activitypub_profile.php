@@ -41,6 +41,18 @@ if (!defined('GNUSOCIAL')) {
 class Activitypub_profile extends Managed_DataObject
 {
     public $__table = 'Activitypub_profile';
+    public $uri;                             // text()   not_null
+    public $profile_id;                      // int(4)  primary_key not_null
+    public $inboxuri;                        // text()   not_null
+    public $sharedInboxuri;                  // text()
+    public $nickname;                        // varchar(64)  multiple_key not_null
+    public $fullname;                        // text()
+    public $profileurl;                      // text()
+    public $homepage;                        // text()
+    public $bio;                             // text()  multiple_key
+    public $location;                        // text()
+    public $created;                         // datetime()   not_null
+    public $modified;                        // timestamp()   not_null default_CURRENT_TIMESTAMP
 
     /**
      * Return table definition for Schema setup and DB_DataObject usage.
@@ -108,7 +120,7 @@ class Activitypub_profile extends Managed_DataObject
             'liked'             => common_local_url("apActorLiked", array("id" => $id)),
             'inbox'             => common_local_url("apActorInbox", array("id" => $id)),
             'preferredUsername' => $profile->getNickname(),
-            'name'              => $profile->getFullname(),
+            'name'              => $profile->getBestName(),
             'summary'           => ($desc = $profile->getDescription()) == null ? "" : $desc,
             'url'               => $profile->getUrl(),
             'manuallyApprovesFollowers' => false,
@@ -280,9 +292,31 @@ class Activitypub_profile extends Managed_DataObject
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @return string URI
      */
-    public function get_uri()
+    public function getUri()
     {
         return $this->uri;
+    }
+
+    /**
+     * Getter for url property
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @return string URL
+     */
+    public function getUrl()
+    {
+        return $this->getUri();
+    }
+
+    /**
+     * Getter for id property
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @return int32
+     */
+    public function getID()
+    {
+        return $this->profile_id;
     }
 
     /**
@@ -293,7 +327,7 @@ class Activitypub_profile extends Managed_DataObject
      * @return Activitypub_profile
      * @throws Exception if it isn't possible to return an Activitypub_profile
      */
-    public static function get_from_uri($url)
+    public static function fromUri($url)
     {
         $explorer = new Activitypub_explorer();
         $profiles_found = $explorer->lookup($url);
@@ -331,7 +365,7 @@ class Activitypub_profile extends Managed_DataObject
                 throw new Exception(_m('Not a valid webfinger address (via cache).'));
             }
             try {
-                return self::get_from_uri($uri);
+                return self::fromUri($uri);
             } catch (Exception $e) {
                 common_log(LOG_ERR, sprintf(__METHOD__ . ': Webfinger address cache inconsistent with database, did not find Activitypub_profile uri==%s', $uri));
                 self::cacheSet(sprintf('activitypub_profile:webfinger:%s', $addr), false);
@@ -372,8 +406,8 @@ class Activitypub_profile extends Managed_DataObject
             $profileUrl = $hints['profileurl'];
             try {
                 common_log(LOG_INFO, "Discovery on acct:$addr with profile URL $profileUrl");
-                $aprofile = self::get_from_uri($hints['profileurl']);
-                self::cacheSet(sprintf('activitypub_profile:webfinger:%s', $addr), $aprofile->get_uri());
+                $aprofile = self::fromUri($hints['profileurl']);
+                self::cacheSet(sprintf('activitypub_profile:webfinger:%s', $addr), $aprofile->getUri());
                 return $aprofile;
             } catch (Exception $e) {
                 common_log(LOG_WARNING, "Failed creating profile from profile URL '$profileUrl': " . $e->getMessage());

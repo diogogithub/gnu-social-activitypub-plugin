@@ -30,7 +30,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 try {
-    Notice::getByUri($data->object->id)->repeat($actor_profile, "ActivityPub");
+    ActivityPubPlugin::get_local_notice_from_url($data->object->id)->repeat($actor_profile, "ActivityPub");
     ActivityPubReturn::answer("Notice repeated successfully.");
 } catch (Exception $e) {
     ActivityPubReturn::error($e->getMessage(), 403);

@@ -34,6 +34,9 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "di
 require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "explorer.php";
 require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "postman.php";
 
+// So that this isn't hardcoded everywhere
+define('ACTIVITYPUB_BASE_INSTANCE_URI', common_root_url()."index.php/user/");
+
 /**
  * @category  Plugin
  * @package   GNUsocial
@@ -54,7 +57,7 @@ class ActivityPubPlugin extends Plugin
     public static function actor_uri($profile)
     {
         if ($profile->isLocal()) {
-            return common_root_url()."index.php/user/".$profile->getID();
+            return ACTIVITYPUB_BASE_INSTANCE_URI.$profile->getID();
         } else {
             return $profile->getUri();
         }
@@ -74,46 +77,30 @@ class ActivityPubPlugin extends Plugin
     }
 
     /**
-     * Get remote user's ActivityPub_profile via a identifier
+     * Returns a notice from its URL since GNU Social doesn't provide
+     * this functionality
      *
-     * @author GNU Social
      * @author Diogo Cordeiro <diogo@fc.up.pt>
-     * @param string $arg A remote user identifier
-     * @return Activitypub_profile|null Valid profile in success | null otherwise
+     * @param string $url Notice's URL
+     * @return Notice The Notice object
+     * @throws Exception This function or provides a Notice or fails with exception
      */
-    public static function pull_remote_profile($arg)
+    public static function get_local_notice_from_url($url)
     {
-        if (preg_match('!^((?:\w+\.)*\w+@(?:\w+\.)*\w+(?:\w+\-\w+)*\.\w+)$!', $arg)) {
-            // webfinger lookup
+        try {
+            return Notice::getByUri($data->object->inReplyTo);
+        } catch (Exception $e) {
             try {
-                return Activitypub_profile::ensure_web_finger($arg);
+                $candidate = Notice::getByID(intval(substr($url, strlen(common_local_url('shownotice', ['notice' => ''])))));
+                if ($candidate->getUrl() == $url) {
+                    return $candidate;
+                } else {
+                    throw new Exception("Notice not found.");
+                }
             } catch (Exception $e) {
-                common_log(LOG_ERR, 'Webfinger lookup failed for ' .
-                                                $arg . ': ' . $e->getMessage());
+                throw new Exception("Notice not found.");
             }
         }
-
-        // Look for profile URLs, with or without scheme:
-        $urls = array();
-        if (preg_match('!^https?://((?:\w+\.)*\w+(?:\w+\-\w+)*\.\w+(?:/\w+)+)$!', $arg)) {
-            $urls[] = $arg;
-        }
-        if (preg_match('!^((?:\w+\.)*\w+(?:\w+\-\w+)*\.\w+(?:/\w+)+)$!', $arg)) {
-            $schemes = array('http', 'https');
-            foreach ($schemes as $scheme) {
-                $urls[] = "$scheme://$arg";
-            }
-        }
-
-        foreach ($urls as $url) {
-            try {
-                return Activitypub_profile::get_from_uri($url);
-            } catch (Exception $e) {
-                common_log(LOG_ERR, 'Profile lookup failed for ' .
-                                                $arg . ': ' . $e->getMessage());
-            }
-        }
-        return null;
     }
 
     /**
@@ -127,18 +114,18 @@ class ActivityPubPlugin extends Plugin
         ActivityPubURLMapperOverwrite::overwrite_variable(
             $m,
             'user/:id',
-                                                    ['action' => 'showstream'],
-                                                    ['id' => '[0-9]+'],
-                                                    'apActorProfile'
-                                                );
+            ['action' => 'showstream'],
+            ['id' => '[0-9]+'],
+            'apActorProfile'
+        );
 
         // Special route for webfinger purposes
         ActivityPubURLMapperOverwrite::overwrite_variable(
             $m,
             ':nickname',
-                                    ['action' => 'showstream'],
-                                    ['nickname' => Nickname::DISPLAY_FMT],
-                                    'apActorProfile'
+            ['action' => 'showstream'],
+            ['nickname' => Nickname::DISPLAY_FMT],
+            'apActorProfile'
         );
 
         $m->connect(
@@ -233,6 +220,49 @@ class ActivityPubPlugin extends Plugin
     /********************************************************
      *                   WebFinger Events                   *
      ********************************************************/
+
+    /**
+     * Get remote user's ActivityPub_profile via a identifier
+     *
+     * @author GNU Social
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param string $arg A remote user identifier
+     * @return Activitypub_profile|null Valid profile in success | null otherwise
+     */
+    public static function pull_remote_profile($arg)
+    {
+        if (preg_match('!^((?:\w+\.)*\w+@(?:\w+\.)*\w+(?:\w+\-\w+)*\.\w+)$!', $arg)) {
+            // webfinger lookup
+            try {
+                return Activitypub_profile::ensure_web_finger($arg);
+            } catch (Exception $e) {
+                common_log(LOG_ERR, 'Webfinger lookup failed for ' .
+                                                $arg . ': ' . $e->getMessage());
+            }
+        }
+
+        // Look for profile URLs, with or without scheme:
+        $urls = array();
+        if (preg_match('!^https?://((?:\w+\.)*\w+(?:\w+\-\w+)*\.\w+(?:/\w+)+)$!', $arg)) {
+            $urls[] = $arg;
+        }
+        if (preg_match('!^((?:\w+\.)*\w+(?:\w+\-\w+)*\.\w+(?:/\w+)+)$!', $arg)) {
+            $schemes = array('http', 'https');
+            foreach ($schemes as $scheme) {
+                $urls[] = "$scheme://$arg";
+            }
+        }
+
+        foreach ($urls as $url) {
+            try {
+                return Activitypub_profile::fromUri($url);
+            } catch (Exception $e) {
+                common_log(LOG_ERR, 'Profile lookup failed for ' .
+                                                $arg . ': ' . $e->getMessage());
+            }
+        }
+        return null;
+    }
 
     /**
     * Webfinger matches: @user@example.com or even @user--one.george_orwell@1984.biz
@@ -357,7 +387,7 @@ class ActivityPubPlugin extends Plugin
                 $url = "$scheme://$target";
                 $this->log(LOG_INFO, "Checking profile address '$url'");
                 try {
-                    $aprofile = Activitypub_profile::get_from_uri($url);
+                    $aprofile = Activitypub_profile::fromUri($url);
                     $profile = $aprofile->local_profile();
                     $displayName = !empty($profile->nickname) && mb_strlen($profile->nickname) < mb_strlen($target) ?
                                         $profile->nickname : $target;
@@ -432,7 +462,7 @@ class ActivityPubPlugin extends Plugin
     {
         $aprofile = Activitypub_profile::getKV('profile_id', $profile->id);
         if ($aprofile instanceof Activitypub_profile) {
-            $uri = $aprofile->get_uri();
+            $uri = $aprofile->getUri();
             return false;
         }
         return true;
@@ -449,27 +479,9 @@ class ActivityPubPlugin extends Plugin
      */
     public function onStartGetProfileFromURI($uri, &$profile)
     {
-        // Don't want to do Web-based discovery on our own server,
-        // so we check locally first. This duplicates the functionality
-        // in the Profile class, since the plugin always runs before
-        // that local lookup, but since we return false it won't run double.
-
-        $user = User::getKV('uri', $uri);
-        if ($user instanceof User) {
-            $profile = $user->getProfile();
-            return false;
-        } else {
-            $group = User_group::getKV('uri', $uri);
-            if ($group instanceof User_group) {
-                $profile = $group->getProfile();
-                return false;
-            }
-        }
-
-        // Now, check remotely
         try {
-            $aprofile = Activitypub_profile::get_from_uri($uri);
-            $profile = $aprofile->local_profile();
+            $explorer = new Activitypub_explorer();
+            $profile = $explorer->lookup($uri)[0];
             return false;
         } catch (Exception $e) {
             return true; // It's not an ActivityPub profile as far as we know, continue event handling

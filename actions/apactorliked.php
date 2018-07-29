@@ -58,6 +58,10 @@ class apActorLikedAction extends ManagedAction
             ActivityPubReturn::error('Invalid Actor URI.', 404);
         }
 
+        if (!$profile->isLocal()) {
+            ActivityPubReturn::error("This is not a local user.");
+        }
+
         $limit    = intval($this->trimmed('limit'));
         $since_id = intval($this->trimmed('since_id'));
         $max_id   = intval($this->trimmed('max_id'));
