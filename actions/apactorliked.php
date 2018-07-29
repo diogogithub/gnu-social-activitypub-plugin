@@ -108,9 +108,10 @@ class apActorLikedAction extends ManagedAction
      */
     protected function pretty_fave($fave_object)
     {
-        $res = array("uri" => $fave_object->uri,
-                             "created" => $fave_object->created,
-                             "object" => Activitypub_notice::notice_to_array(Notice::getByID($fave_object->notice_id)));
+        $res = [
+            'created' => $fave_object->created,
+            'object' => Activitypub_notice::notice_to_array(Notice::getByID($fave_object->notice_id))
+        ];
 
         return $res;
     }

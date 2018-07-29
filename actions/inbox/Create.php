@@ -127,6 +127,11 @@ foreach ($to_profiles as $tp) {
     $act->context->attention[ActivityPubPlugin::actor_uri($tp)] = "http://activitystrea.ms/schema/1.0/person";
 }
 
+// Add location if that is set
+if (isset ($data->object->latitude, $data->object->longitude)) {
+    $act->context->location = Location::fromLatLon($data->object->latitude, $data->object->longitude);
+}
+
 // Reject notice if it is too long (without the HTML)
 // This is done after MediaFile::fromUpload etc. just to act the same as the ApiStatusesUpdateAction
 if (Notice::contentTooLong($content)) {

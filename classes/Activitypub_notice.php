@@ -71,21 +71,31 @@ class Activitypub_notice extends Managed_DataObject
         }
 
         $item = [
-                        'id'               => $notice->getUrl(),
-                        'type'             => 'Note',
-                        'inReplyTo'        => empty($notice->reply_to) ? null : Notice::getById($notice->reply_to)->getUrl(),
-                        'published'        => $notice->getCreated(),
-                        'url'              => $notice->getUrl(),
-                        'atributedTo'      => ActivityPubPlugin::actor_uri($profile),
-                        'to'               => $to,
-                        'atomUri'          => $notice->getUrl(),
-                        'inReplyToAtomUri' => empty($notice->reply_to) ? null : Notice::getById($notice->reply_to)->getUrl(),
-                        'conversation'     => $notice->getConversationUrl(),
-                        'content'          => $notice->getContent(),
-                        'is_local'         => $notice->isLocal(),
-                        'attachment'       => $attachments,
-                        'tag'              => $tags
-                ];
+                'context'          => 'https://www.w3.org/ns/activitystreams',
+                'id'               => $notice->getUrl(),
+                'type'             => 'Note',
+                'inReplyTo'        => empty($notice->reply_to) ? null : Notice::getById($notice->reply_to)->getUrl(),
+                'published'        => $notice->getCreated(),
+                'url'              => $notice->getUrl(),
+                'atributedTo'      => ActivityPubPlugin::actor_uri($profile),
+                'to'               => $to,
+                'atomUri'          => $notice->getUrl(),
+                'inReplyToAtomUri' => empty($notice->reply_to) ? null : Notice::getById($notice->reply_to)->getUrl(),
+                'conversation'     => $notice->getConversationUrl(),
+                'content'          => $notice->getContent(),
+                'is_local'         => $notice->isLocal(),
+                'attachment'       => $attachments,
+                'tag'              => $tags
+        ];
+
+        // Do we have a location for this notice?
+        try {
+            $location = Notice_location::locFromStored($notice);
+            $item['latitude']  = $location->lat;
+            $item['longitude'] = $location->lon;
+        } catch (Exception $ex) {
+            // Apparently no.
+        }
 
         return $item;
     }
