@@ -164,8 +164,8 @@ class Activitypub_postman
     {
         $data = Activitypub_like::like_to_array(
                     ActivityPubPlugin::actor_uri($this->actor),
-                         Activitypub_notice::notice_to_array($notice)
-                        );
+                    $notice->getUrl()
+                );
         $data = json_encode($data);
 
         foreach ($this->to_inbox() as $inbox) {
