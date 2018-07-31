@@ -49,10 +49,13 @@ class Activitypub_accept extends Managed_DataObject
      */
     public static function accept_to_array($object)
     {
-        $res = array("@context" => "https://www.w3.org/ns/activitystreams",
-                          "type"   => "Accept",
-                          "object" => $object
-                       );
+        $res = [
+            '@context' => 'https://www.w3.org/ns/activitystreams',
+            'id'     => common_root_url().'follow_from_'.urlencode($object->actor).'_to_'.urlencode($object->object),
+            'actor'  => $object->object,
+            'type'   => 'Accept',
+            'object' => $object
+        ];
         return $res;
     }
 }
