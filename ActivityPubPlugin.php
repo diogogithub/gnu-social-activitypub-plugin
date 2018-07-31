@@ -92,7 +92,7 @@ class ActivityPubPlugin extends Plugin
     public static function get_local_notice_from_url($url)
     {
         try {
-            return Notice::getByUri($data->object->inReplyTo);
+            return Notice::getByUri($url);
         } catch (Exception $e) {
             try {
                 $candidate = Notice::getByID(intval(substr($url, strlen(common_local_url('shownotice', ['notice' => ''])))));
