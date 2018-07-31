@@ -98,20 +98,7 @@ class Activitypub_profile extends Managed_DataObject
         $res = [
             '@context' => [
                 "https://www.w3.org/ns/activitystreams",
-                "https://w3id.org/security/v1",
-                [
-                    'manuallyApprovesFollowers' => 'as=>manuallyApprovesFollowers',
-                    'sensitive'                 => 'as=>sensitive',
-                    'movedTo'                   => 'as=>movedTo',
-                    'Hashtag'                   => 'as=>Hashtag',
-                    'ostatus'                   => 'http=>//ostatus.org#',
-                    'atomUri'                   => 'ostatus=>atomUri',
-                    'inReplyToAtomUri'          => 'ostatus=>inReplyToAtomUri',
-                    'conversation'              => 'ostatus=>conversation',
-                    'schema'                    => 'http=>//schema.org#',
-                    'PropertyValue'             => 'schema=>PropertyValue',
-                    'value'                     => 'schema=>value'
-                ]
+                "https://w3id.org/security/v1"
             ],
             'id'                => $uri,
             'type'              => 'Person',
@@ -125,7 +112,7 @@ class Activitypub_profile extends Managed_DataObject
             'url'               => $profile->getUrl(),
             'manuallyApprovesFollowers' => false,
             'publicKey' => [
-                'id'    => $uri."#main-key",
+                'id'    => $uri."#public-key",
                 'owner' => $uri,
                 'publicKeyPem' => $public_key
             ],

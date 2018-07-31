@@ -79,15 +79,22 @@ class Activitypub_pending_follow_requests extends Managed_DataObject
     /**
      * Add Follow request to table.
      *
-     * @author Diogo Cordeiro
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param int32 $actor actor id
      * @param int32 $remote_actor remote actor id
+     * @return boolean true if added, false otherwise
      */
     public function add()
     {
         return !$this->exists() && $this->insert();
     }
 
+    /**
+     * Check if a Follow request is pending.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @return boolean true if is pending, false otherwise
+     */
     public function exists()
     {
         $this->_reldb = clone ($this);
@@ -98,6 +105,12 @@ class Activitypub_pending_follow_requests extends Managed_DataObject
         return false;
     }
 
+    /**
+     * Remove a request from the pending table.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @return boolean true if removed, false otherwise
+     */
     public function remove()
     {
         return $this->exists() && $this->_reldb->delete();

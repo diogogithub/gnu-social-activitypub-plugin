@@ -30,7 +30,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 /**
- * ActivityPub error representation
+ * Notice (Local notices only)
  *
  * @category  Plugin
  * @package   GNUsocial
@@ -38,27 +38,31 @@ if (!defined('GNUSOCIAL')) {
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      http://www.gnu.org/software/social/
  */
-class Activitypub_create extends Managed_DataObject
+class apNoticeAction extends ManagedAction
 {
+    protected $needLogin = false;
+    protected $canPost   = true;
+
     /**
-     * Generates an ActivityPub representation of a Create
+     * Handle the Notice request
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
-     * @param string $actor
-     * @param array $object
-     * @return pretty array to be used in a response
+     * @return void
      */
-    public static function create_to_array($id, $actor, $object)
+    protected function handle()
     {
-        $res = [
-            '@context' => 'https://www.w3.org/ns/activitystreams',
-            'id'     => $id,
-            'type'   => 'Create',
-            'to'     => $object['to'],
-            'cc'     => $object['cc'],
-            'actor'  => $actor,
-            'object' => $object
-        ];
-        return $res;
+        try {
+            $notice = Notice::getByID($this->trimmed('id'));
+        } catch (Exception $e) {
+            ActivityPubReturn::error('Invalid Notice URI.', 404);
+        }
+
+        if (!$notice->isLocal()) {
+            ActivityPubReturn::error("This is not a local notice.");
+        }
+
+        $res = Activitypub_notice::notice_to_array($notice);
+
+        ActivityPubReturn::answer($res);
     }
 }

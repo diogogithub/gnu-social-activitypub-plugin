@@ -100,6 +100,8 @@ class Activitypub_explorer
         if (self::validate_remote_response($res)) {
             $this->temp_res = $res;
             return true;
+        } else {
+            common_debug('ActivityPub Explorer: Invalid potential remote actor while ensuring URI: '.$url. '. He returned the following: '.json_encode($res, JSON_PRETTY_PRINT));
         }
 
         return false;
@@ -116,9 +118,9 @@ class Activitypub_explorer
     private function grab_local_user($uri, $online = false)
     {
         if ($online) {
-            common_debug("Explorer is searching locally for ".$uri. " online.");
+            common_debug('ActivityPub Explorer: Searching locally for '.$uri. ' with online resources.');
         } else {
-            common_debug("Explorer is searching locally for ".$uri. " offline.");
+            common_debug('ActivityPub Explorer: Searching locally for '.$uri. ' offline.');
         }
         // Ensure proper remote URI
         // If an exception occurs here it's better to just leave everything
@@ -132,32 +134,34 @@ class Activitypub_explorer
         $aprofile = self::get_aprofile_by_url($uri);
         if ($aprofile instanceof Activitypub_profile) {
             $profile = $aprofile->local_profile();
-            common_debug("Explorer found a local Aprofile for ".$uri);
+            common_debug('ActivityPub Explorer: Found a local Aprofile for '.$uri);
             // We found something!
             $this->discovered_actor_profiles[]= $profile;
             unset($this->temp_res); // IMPORTANT to avoid _dangerous_ noise in the Explorer system
             return true;
         } else {
-            common_debug("Explorer didn't find a local Aprofile for ".$uri);
+            common_debug('ActivityPub Explorer: Unable to find a local Aprofile for '.$uri.' - looking for a Profile instead.');
             // Well, maybe it is a pure blood?
             // Iff, we are in the same instance:
             $ACTIVITYPUB_BASE_INSTANCE_URI_length = strlen(ACTIVITYPUB_BASE_INSTANCE_URI);
             if (substr($uri, 0, $ACTIVITYPUB_BASE_INSTANCE_URI_length) == ACTIVITYPUB_BASE_INSTANCE_URI) {
                 try {
                     $profile = Profile::getByID(intval(substr($uri, $ACTIVITYPUB_BASE_INSTANCE_URI_length)));
-
+                    common_debug('ActivityPub Explorer: Found a Profile for '.$uri);
                     // We found something!
                     $this->discovered_actor_profiles[]= $profile;
                     unset($this->temp_res); // IMPORTANT to avoid _dangerous_ noise in the Explorer system
                     return true;
                 } catch (Exception $e) {
                     // Let the exception go on its merry way.
+                    common_debug('ActivityPub Explorer: Unable to find a Profile for '.$uri);
                 }
             }
         }
 
         // If offline grabbing failed, attempt again with online resources
         if (!$online) {
+            common_debug('ActivityPub Explorer: Will try everything again with online resources against: '.$uri);
             return $this->grab_local_user($uri, true);
         }
 
@@ -174,7 +178,7 @@ class Activitypub_explorer
      */
     private function grab_remote_user($url)
     {
-        common_debug("Explorer is grabbing a remote profile for ".$url);
+        common_debug('ActivityPub Explorer: Trying to grab a remote actor for '.$url);
         if (!isset($this->temp_res)) {
             $client    = new HTTPClient();
             $headers   = array();
@@ -187,8 +191,10 @@ class Activitypub_explorer
             unset($this->temp_res);
         }
         if (isset($res["orderedItems"])) { // It's a potential collection of actors!!!
+            common_debug('ActivityPub Explorer: Found a collection of actors for '.$url);
             foreach ($res["orderedItems"] as $profile) {
                 if ($this->_lookup($profile) == false) {
+                    common_debug('ActivityPub Explorer: Found an inavlid actor for '.$profile);
                     // XXX: Invalid actor found, not sure how we handle those
                 }
             }
@@ -198,8 +204,11 @@ class Activitypub_explorer
             }
             return true;
         } elseif (self::validate_remote_response($res)) {
+            common_debug('ActivityPub Explorer: Found a valid remote actor for '.$url);
             $this->discovered_actor_profiles[]= $this->store_profile($res);
             return true;
+        } else {
+            common_debug('ActivityPub Explorer: Invalid potential remote actor while grabbing remotely: '.$url. '. He returned the following: '.json_encode($res, JSON_PRETTY_PRINT));
         }
 
         return false;
@@ -218,8 +227,8 @@ class Activitypub_explorer
         $aprofile                 = new Activitypub_profile;
         $aprofile->uri            = $res['id'];
         $aprofile->nickname       = $res['preferredUsername'];
-        $aprofile->fullname       = $res['name'];
-        $aprofile->bio            = substr($res['summary'], 0, 1000);
+        $aprofile->fullname       = isset($res['name']) ? $res['name'] : null;
+        $aprofile->bio            = isset($res['summary']) ? substr($res['summary'], 0, 1000) : null;
         $aprofile->inboxuri       = $res['inbox'];
         $aprofile->sharedInboxuri = isset($res['endpoints']['sharedInbox']) ? $res['endpoints']['sharedInbox'] : $res['inbox'];
 
@@ -245,7 +254,7 @@ class Activitypub_explorer
      */
     public static function validate_remote_response($res)
     {
-        if (!isset($res['id'], $res['preferredUsername'], $res['name'], $res['summary'], $res['inbox'], $res['publicKey']['publicKeyPem'])) {
+        if (!isset($res['id'], $res['preferredUsername'], $res['inbox'], $res['publicKey']['publicKeyPem'])) {
             return false;
         }
 

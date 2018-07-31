@@ -30,7 +30,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 /**
- * ActivityPub error representation
+ * ActivityPub Mention Tag representation
  *
  * @category  Plugin
  * @package   GNUsocial
@@ -38,27 +38,23 @@ if (!defined('GNUSOCIAL')) {
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      http://www.gnu.org/software/social/
  */
-class Activitypub_create extends Managed_DataObject
+class Activitypub_mention_tag extends Managed_DataObject
 {
     /**
-     * Generates an ActivityPub representation of a Create
+     * Generates an ActivityPub representation of a Mention Tag
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
-     * @param string $actor
-     * @param array $object
+     * @param string $href Actor Uri
+     * @param array $name Mention name
      * @return pretty array to be used in a response
      */
-    public static function create_to_array($id, $actor, $object)
+    public static function mention_tag_to_array_from_values($href, $name)
     {
         $res = [
-            '@context' => 'https://www.w3.org/ns/activitystreams',
-            'id'     => $id,
-            'type'   => 'Create',
-            'to'     => $object['to'],
-            'cc'     => $object['cc'],
-            'actor'  => $actor,
-            'object' => $object
-        ];
+            "type" => "Mention",
+            "href" => $href,
+            "name" => $name
+         ];
         return $res;
     }
 }

@@ -29,6 +29,10 @@ if (!defined('GNUSOCIAL')) {
     exit(1);
 }
 
+use GuzzleHttp\Client;
+use HttpSignatures\Context;
+use HttpSignatures\GuzzleHttpSignatures;
+
 /**
  * ActivityPub's own Postman
  *
@@ -44,6 +48,7 @@ if (!defined('GNUSOCIAL')) {
 class Activitypub_postman
 {
     private $actor;
+    private $actor_uri;
     private $to = [];
     private $client;
     private $headers;
@@ -57,14 +62,48 @@ class Activitypub_postman
      */
     public function __construct($from, $to = [])
     {
-        $this->client = new HTTPClient();
         $this->actor = $from;
         $this->to = $to;
-        $this->headers = [];
-        $this->headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
-        $this->headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
+        $this->actor_uri = ActivityPubPlugin::actor_uri($this->actor);
+
+        $actor_private_key = new Activitypub_rsa();
+        $actor_private_key = $actor_private_key->get_private_key($this->actor);
+
+        $context = new Context([
+            'keys' => [$this->actor_uri."#public-key" => $actor_private_key],
+            'algorithm' => 'rsa-sha256',
+            'headers' => ['(request-target)', 'date', 'content-type', 'accept', 'user-agent'],
+        ]);
+
+        $this->to = $to;
+        $this->headers = [
+            'content-type' => 'application/activity+json',
+            'accept'       => 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
+            'user-agent'   => 'GNUSocialBot v0.1 - https://gnu.io/social',
+            'date'         => date('D, d M Y h:i:s') . ' GMT'
+        ];
+
+        $handlerStack = GuzzleHttpSignatures::defaultHandlerFromContext($context);
+        $this->client = new Client(['handler' => $handlerStack]);
     }
 
+    /**
+     * Send something to remote instance
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param string $data request body
+     * @param string $inbox url of remote inbox
+     * @param string $method request method
+     * @return Psr\Http\Message\ResponseInterface
+     */
+    public function send($data, $inbox, $method = 'POST')
+    {
+        common_debug('ActivityPub Postman: Delivering '.$data.' to '.$inbox);
+        $response = $this->client->request($method, $inbox, ['headers' => array_merge($this->headers, ['(request-target)' => strtolower($method).' '.parse_url($inbox, PHP_URL_PATH)]),'body' => $data]);
+        common_debug('ActivityPub Postman: Delivery result: '.$response->getBody()->getContents());
+        return $response;
+    }
+    
     /**
      * Send a follow notification to remote instance
      *
@@ -74,13 +113,12 @@ class Activitypub_postman
     public function follow()
     {
         $data = Activitypub_follow::follow_to_array(ActivityPubPlugin::actor_uri($this->actor), $this->to[0]->getUrl());
-        $this->client->setBody(json_encode($data));
-        $res = $this->client->post($this->to[0]->get_inbox(), $this->headers);
-        $res_body = json_decode($res->getBody());
+        $res = $this->send(json_encode($data), $this->to[0]->get_inbox());
+        $res_body = json_decode($res->getBody()->getContents());
 
-        if ($res->isOk() || $res->getStatus() == 409) {
+        if ($res->getStatusCode() == 200 || $res->getStatusCode() == 409) {
             $pending_list = new Activitypub_pending_follow_requests($this->actor->getID(), $this->to[0]->getID());
-            if (! ($res->getStatus() == 409 || $res_body->type == "Accept")) {
+            if (! ($res->getStatusCode() == 409 || $res_body->type == "Accept")) {
                 $pending_list->add();
                 throw new Exception("Your follow request is pending acceptation.");
             }
@@ -106,11 +144,10 @@ class Activitypub_postman
                              $this->to[0]->getUrl()
                          )
                         );
-        $this->client->setBody(json_encode($data));
-        $res = $this->client->post($this->to[0]->get_inbox(), $this->headers);
-        $res_body = json_decode($res->getBody());
+        $res = $this->send(json_encode($data), $this->to[0]->get_inbox());
+        $res_body = json_decode($res->getBody()->getContents());
 
-        if ($res->isOk() || $res->getStatus() == 409) {
+        if ($res->getStatusCode() == 200 || $res->getStatusCode() == 409) {
             $pending_list = new Activitypub_pending_follow_requests($this->actor->getID(), $this->to[0]->getID());
             $pending_list->remove();
             return true;
@@ -133,9 +170,10 @@ class Activitypub_postman
                     ActivityPubPlugin::actor_uri($this->actor),
                          Activitypub_notice::notice_to_array($notice)
                         );
-        $this->client->setBody(json_encode($data));
+        $data = json_encode($data);
+
         foreach ($this->to_inbox() as $inbox) {
-            $this->client->post($inbox, $this->headers);
+            $this->send($data, $inbox);
         }
     }
 
@@ -153,9 +191,10 @@ class Activitypub_postman
                           Activitypub_notice::notice_to_array($notice)
                          )
                 );
-        $this->client->setBody(json_encode($data));
+        $data = json_encode($data);
+
         foreach ($this->to_inbox() as $inbox) {
-            $this->client->post($inbox, $this->headers);
+            $this->send($data, $inbox);
         }
     }
 
@@ -169,15 +208,16 @@ class Activitypub_postman
     {
         $data = Activitypub_create::create_to_array(
                     $notice->getUrl(),
-                    ActivityPubPlugin::actor_uri($this->actor),
-                    array_merge(Activitypub_notice::notice_to_array($notice), ['cc' => common_local_url('apActorFollowers', ['id' => $this->actor->getID()]),])
+                    $this->actor_uri,
+                    Activitypub_notice::notice_to_array($notice)
                 );
         if (isset($notice->reply_to)) {
             $data["object"]["reply_to"] = $notice->getParent()->getUrl();
         }
-        $this->client->setBody(json_encode($data));
+        $data = json_encode($data);
+
         foreach ($this->to_inbox() as $inbox) {
-            $this->client->post($inbox, $this->headers);
+            $this->send($data, $inbox);
         }
     }
 
@@ -193,9 +233,10 @@ class Activitypub_postman
                          ActivityPubPlugin::actor_uri($this->actor),
                          Activitypub_notice::notice_to_array($notice)
                         );
-        $this->client->setBody(json_encode($data));
+        $data = json_encode($data);
+
         foreach ($this->to_inbox() as $inbox) {
-            $this->client->post($inbox, $this->headers);
+            $this->send($data, $inbox);
         }
     }
 
@@ -208,12 +249,12 @@ class Activitypub_postman
     public function delete($notice)
     {
         $data = Activitypub_delete::delete_to_array(Activitypub_notice::notice_to_array($notice));
-        $this->client->setBody(json_encode($data));
-        $errors = array();
+        $errors = [];
+        $data = json_encode($data);
         foreach ($this->to_inbox() as $inbox) {
-            $res = $this->client->post($inbox, $this->headers);
-            if (!$res->isOk()) {
-                $res_body = json_decode($res->getBody());
+            $res = $this->send($data, $inbox);
+            if (!$res->getStatusCode() == 200) {
+                $res_body = json_decode($res->getBody()->getContents());
                 if (isset($res_body[0]->error)) {
                     $errors[] = ($res_body[0]->error);
                     continue;
@@ -234,7 +275,7 @@ class Activitypub_postman
      */
     private function to_inbox()
     {
-        $to_inboxes = array();
+        $to_inboxes = [];
         foreach ($this->to as $to_profile) {
             $i = $to_profile->get_inbox();
             // Prevent delivering to self

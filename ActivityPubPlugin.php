@@ -29,7 +29,11 @@ if (!defined('GNUSOCIAL')) {
     exit(1);
 }
 
+// Ensure proper timezone
+date_default_timezone_set('UTC');
+
 // Import required files by the plugin
+require __DIR__.'/vendor/autoload.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "discoveryhints.php";
 require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "explorer.php";
 require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "postman.php";
@@ -92,7 +96,7 @@ class ActivityPubPlugin extends Plugin
         } catch (Exception $e) {
             try {
                 $candidate = Notice::getByID(intval(substr($url, strlen(common_local_url('shownotice', ['notice' => ''])))));
-                if ($candidate->getUrl() == $url) {
+                if ($candidate->getUrl() == $url) { // Sanity check
                     return $candidate;
                 } else {
                     throw new Exception("Notice not found.");
@@ -111,21 +115,26 @@ class ActivityPubPlugin extends Plugin
      */
     public function onRouterInitialized(URLMapper $m)
     {
-        ActivityPubURLMapperOverwrite::overwrite_variable(
+        ActivityPubURLMapperOverwrite::variable(
             $m,
             'user/:id',
-            ['action' => 'showstream'],
-            ['id' => '[0-9]+'],
+            ['id'     => '[0-9]+'],
             'apActorProfile'
         );
 
         // Special route for webfinger purposes
-        ActivityPubURLMapperOverwrite::overwrite_variable(
+        ActivityPubURLMapperOverwrite::variable(
             $m,
             ':nickname',
-            ['action' => 'showstream'],
             ['nickname' => Nickname::DISPLAY_FMT],
             'apActorProfile'
+        );
+
+        ActivityPubURLMapperOverwrite::variable(
+            $m,
+            'notice/:id',
+            ['id'     => '[0-9]+'],
+            'apNotice'
         );
 
         $m->connect(
@@ -170,9 +179,7 @@ class ActivityPubPlugin extends Plugin
                                 'version' => GNUSOCIAL_VERSION,
                                 'author' => 'Diogo Cordeiro, Daniel Supernault',
                                 'homepage' => 'https://www.gnu.org/software/social/',
-                                'rawdescription' =>
-                                // Todo: Translation
-                                'Adds ActivityPub Support'];
+                                'rawdescription' => 'Adds ActivityPub Support'];
 
         return true;
     }
@@ -771,7 +778,7 @@ class ActivityPubPlugin extends Plugin
         if (method_exists('ActivityUtils', 'compareVerbs')) {
             $is_post_verb = ActivityUtils::compareVerbs(
                             $notice->verb,
-                                                                     array(ActivityVerb::POST)
+                            [ActivityVerb::POST]
                         );
         } else {
             $is_post_verb = ($notice->verb == ActivityVerb::POST ? true : false);
@@ -887,6 +894,53 @@ class ActivityPubReturn
         echo json_encode($res, JSON_UNESCAPED_SLASHES);
         exit;
     }
+
+    /**
+     * Select content type from HTTP Accept header
+     *
+     * @author Maciej Łebkowski <m.lebkowski@gmail.com>
+     * @param array $mimeTypes Supported Types
+     * @return array|null of supported mime types sorted | null if none valid
+     */
+    public static function getBestSupportedMimeType($mimeTypes = null)
+    {
+        // Values will be stored in this array
+        $AcceptTypes = array();
+
+        // Accept header is case insensitive, and whitespace isn’t important
+        $accept = strtolower(str_replace(' ', '', $_SERVER['HTTP_ACCEPT']));
+        // divide it into parts in the place of a ","
+        $accept = explode(',', $accept);
+        foreach ($accept as $a) {
+            // the default quality is 1.
+            $q = 1;
+            // check if there is a different quality
+            if (strpos($a, ';q=')) {
+                // divide "mime/type;q=X" into two parts: "mime/type" i "X"
+                list($a, $q) = explode(';q=', $a);
+            }
+            // mime-type $a is accepted with the quality $q
+            // WARNING: $q == 0 means, that mime-type isn’t supported!
+            $AcceptTypes[$a] = $q;
+        }
+        arsort($AcceptTypes);
+
+        // if no parameter was passed, just return parsed data
+        if (!$mimeTypes) {
+            return $AcceptTypes;
+        }
+
+        $mimeTypes = array_map('strtolower', (array)$mimeTypes);
+
+        // let’s check our supported types:
+        foreach ($AcceptTypes as $mime => $q) {
+            if ($q && in_array($mime, $mimeTypes)) {
+                return $mime;
+            }
+        }
+        // no mime-type found
+        return null;
+    }
 }
 
 /**
@@ -894,15 +948,16 @@ class ActivityPubReturn
  */
 class ActivityPubURLMapperOverwrite extends URLMapper
 {
-    public static function overwrite_variable($m, $path, $args, $paramPatterns, $newaction)
+    public static function variable($m, $path, $paramPatterns, $newaction)
     {
         $mimes = [
-                    'application/activity+json',
-                    'application/ld+json',
-                    'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'
-                ];
+            'application/json',
+            'application/activity+json',
+            'application/ld+json',
+            'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'
+        ];
 
-        if (in_array($_SERVER["HTTP_ACCEPT"], $mimes) == false) {
+        if (is_null(ActivityPubReturn::getBestSupportedMimeType($mimes))) {
             return true;
         }
 

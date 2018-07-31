@@ -50,12 +50,12 @@ class Activitypub_notice extends Managed_DataObject
     public static function notice_to_array($notice)
     {
         $profile = $notice->getProfile();
-        $attachments = array();
+        $attachments = [];
         foreach ($notice->attachments() as $attachment) {
             $attachments[] = Activitypub_attachment::attachment_to_array($attachment);
         }
 
-        $tags = array();
+        $tags = [];
         foreach ($notice->getTags() as $tag) {
             if ($tag != "") {       // Hacky workaround to avoid stupid outputs
                 $tags[] = Activitypub_tag::tag_to_array($tag);
@@ -64,30 +64,36 @@ class Activitypub_notice extends Managed_DataObject
 
         $to = [];
         foreach ($notice->getAttentionProfiles() as $to_profile) {
-            $to[] = $to_profile->getUri();
-        }
-        if (empty($to)) {
-            $to = array("https://www.w3.org/ns/activitystreams#Public");
+            $to[]  = $href = $to_profile->getUri();
+            $tags[] = Activitypub_mention_tag::mention_tag_to_array_from_values($href, $to_profile->getNickname().'@'.parse_url($href, PHP_URL_HOST));
         }
 
+        // In a world without walls and fences, we should make everything Public!
+        $to[]= 'https://www.w3.org/ns/activitystreams#Public';
+
         $item = [
-                'context'          => 'https://www.w3.org/ns/activitystreams',
+                '@context'          => 'https://www.w3.org/ns/activitystreams',
                 'id'               => $notice->getUrl(),
                 'type'             => 'Note',
-                'inReplyTo'        => empty($notice->reply_to) ? null : Notice::getById($notice->reply_to)->getUrl(),
-                'published'        => $notice->getCreated(),
+                'published'        => str_replace(' ', 'T', $notice->getCreated()).'Z',
                 'url'              => $notice->getUrl(),
                 'atributedTo'      => ActivityPubPlugin::actor_uri($profile),
                 'to'               => $to,
+                'cc'               => common_local_url('apActorFollowers', ['id' => $profile->getID()]),
                 'atomUri'          => $notice->getUrl(),
-                'inReplyToAtomUri' => empty($notice->reply_to) ? null : Notice::getById($notice->reply_to)->getUrl(),
                 'conversation'     => $notice->getConversationUrl(),
                 'content'          => $notice->getContent(),
-                'is_local'         => $notice->isLocal(),
+                'isLocal'         => $notice->isLocal(),
                 'attachment'       => $attachments,
                 'tag'              => $tags
         ];
 
+        // Is this a reply?
+        if (!empty($notice->reply_to)) {
+            $item['inReplyTo'] = Notice::getById($notice->reply_to)->getUrl();
+            $item['inReplyToAtomUri'] = Notice::getById($notice->reply_to)->getUrl();
+        }
+        
         // Do we have a location for this notice?
         try {
             $location = Notice_location::locFromStored($notice);

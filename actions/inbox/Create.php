@@ -128,7 +128,7 @@ foreach ($to_profiles as $tp) {
 }
 
 // Add location if that is set
-if (isset ($data->object->latitude, $data->object->longitude)) {
+if (isset($data->object->latitude, $data->object->longitude)) {
     $act->context->location = Location::fromLatLon($data->object->latitude, $data->object->longitude);
 }
 

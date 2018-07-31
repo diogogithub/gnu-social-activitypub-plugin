@@ -68,6 +68,23 @@ class Activitypub_rsa extends Managed_DataObject
         ];
     }
 
+    public function get_private_key($profile)
+    {
+        $this->profile_id = $profile->getID();
+        $apRSA = self::getKV('profile_id', $this->profile_id);
+        if (!$apRSA instanceof Activitypub_rsa) {
+            // No existing key pair for this profile
+            if ($profile->isLocal()) {
+                self::generate_keys($this->private_key, $this->public_key);
+                $this->store_keys();
+            } else {
+                throw new Exception('This is a remote Profile, there is no Private Key for this Profile.');
+            }
+        }
+        return $apRSA->private_key;
+    }
+
+
     /**
      * Guarantees a Public Key for a given profile.
      *
