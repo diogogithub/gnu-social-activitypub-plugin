@@ -905,8 +905,12 @@ class ActivityPubReturn
      */
     public static function getBestSupportedMimeType($mimeTypes = null)
     {
+        if (!isset($_SERVER['HTTP_ACCEPT'])) {
+            return null;
+        }
+
         // Values will be stored in this array
-        $AcceptTypes = array();
+        $AcceptTypes = [];
 
         // Accept header is case insensitive, and whitespace isn’t important
         $accept = strtolower(str_replace(' ', '', $_SERVER['HTTP_ACCEPT']));
