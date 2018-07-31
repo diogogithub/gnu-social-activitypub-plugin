@@ -184,7 +184,7 @@ class Activitypub_postman
         $data = Activitypub_undo::undo_to_array(
                          Activitypub_like::like_to_array(
                              ActivityPubPlugin::actor_uri($this->actor),
-                          Activitypub_notice::notice_to_array($notice)
+                            $notice->getUrl()
                          )
                 );
         $data = json_encode($data);

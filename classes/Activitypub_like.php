@@ -44,8 +44,8 @@ class Activitypub_like extends Managed_DataObject
      * Generates an ActivityPub representation of a Like
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
-     * @param string $actor
-     * @param array $object
+     * @param string $actor  Actor URI
+     * @param string $object Notice URI
      * @return pretty array to be used in a response
      */
     public static function like_to_array($actor, $object)

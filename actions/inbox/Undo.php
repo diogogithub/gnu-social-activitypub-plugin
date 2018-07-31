@@ -44,15 +44,13 @@ case "Like":
             Fave::removeEntry($actor_profile, ActivityPubPlugin::get_local_notice_from_url($data->object->object->id));
             // Notice disfavorited successfully.
             ActivityPubReturn::answer(
-                    Activitypub_undo::undo_to_array(
-                                            Activitypub_like::like_to_array(
-                                             Activitypub_notice::notice_to_array(
-                                                 $actor_profile->getUrl(),
-                                                 $data->object->object
-                                             )
-                                            )
+                Activitypub_undo::undo_to_array(
+                                        Activitypub_like::like_to_array(
+                                             $actor_profile->getUrl(),
+                                             $data->object->object
+                                        )
                 )
-                                          );
+            );
         } catch (Exception $e) {
             ActivityPubReturn::error($e->getMessage(), 403);
         }
