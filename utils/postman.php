@@ -113,7 +113,7 @@ class Activitypub_postman
     public function follow()
     {
         $data = Activitypub_follow::follow_to_array(ActivityPubPlugin::actor_uri($this->actor), $this->to[0]->getUrl());
-        $res = $this->send(json_encode($data), $this->to[0]->get_inbox());
+        $res = $this->send(json_encode($data, JSON_UNESCAPED_SLASHES), $this->to[0]->get_inbox());
         $res_body = json_decode($res->getBody()->getContents());
 
         if ($res->getStatusCode() == 200 || $res->getStatusCode() == 202 || $res->getStatusCode() == 409) {
@@ -140,7 +140,7 @@ class Activitypub_postman
                              $this->to[0]->getUrl()
                          )
                         );
-        $res = $this->send(json_encode($data), $this->to[0]->get_inbox());
+        $res = $this->send(json_encode($data, JSON_UNESCAPED_SLASHES), $this->to[0]->get_inbox());
         $res_body = json_decode($res->getBody()->getContents());
 
         if ($res->getStatusCode() == 200 || $res->getStatusCode() == 202 || $res->getStatusCode() == 409) {
@@ -166,7 +166,7 @@ class Activitypub_postman
                     ActivityPubPlugin::actor_uri($this->actor),
                     $notice->getUrl()
                 );
-        $data = json_encode($data);
+        $data = json_encode($data, JSON_UNESCAPED_SLASHES);
 
         foreach ($this->to_inbox() as $inbox) {
             $this->send($data, $inbox);
@@ -187,7 +187,7 @@ class Activitypub_postman
                             $notice->getUrl()
                          )
                 );
-        $data = json_encode($data);
+        $data = json_encode($data, JSON_UNESCAPED_SLASHES);
 
         foreach ($this->to_inbox() as $inbox) {
             $this->send($data, $inbox);
@@ -210,7 +210,7 @@ class Activitypub_postman
         if (isset($notice->reply_to)) {
             $data["object"]["reply_to"] = $notice->getParent()->getUrl();
         }
-        $data = json_encode($data);
+        $data = json_encode($data, JSON_UNESCAPED_SLASHES);
 
         foreach ($this->to_inbox() as $inbox) {
             $this->send($data, $inbox);
@@ -229,7 +229,7 @@ class Activitypub_postman
                          ActivityPubPlugin::actor_uri($this->actor),
                          Activitypub_notice::notice_to_array($notice)
                         );
-        $data = json_encode($data);
+        $data = json_encode($data, JSON_UNESCAPED_SLASHES);
 
         foreach ($this->to_inbox() as $inbox) {
             $this->send($data, $inbox);
@@ -246,7 +246,7 @@ class Activitypub_postman
     {
         $data = Activitypub_delete::delete_to_array(Activitypub_notice::notice_to_array($notice));
         $errors = [];
-        $data = json_encode($data);
+        $data = json_encode($data, JSON_UNESCAPED_SLASHES);
         foreach ($this->to_inbox() as $inbox) {
             $res = $this->send($data, $inbox);
             if (!$res->getStatusCode() == 200) {
