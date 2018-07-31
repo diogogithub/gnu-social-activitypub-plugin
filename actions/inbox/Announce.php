@@ -30,8 +30,12 @@ if (!defined('GNUSOCIAL')) {
 }
 
 try {
-    ActivityPubPlugin::get_local_notice_from_url($data->object->id)->repeat($actor_profile, "ActivityPub");
-    ActivityPubReturn::answer("Notice repeated successfully.");
+    if (isset($data->object->id)) {
+        ActivityPubPlugin::get_local_notice_from_url($data->object->id)->repeat($actor_profile, "ActivityPub");
+        ActivityPubReturn::answer("Notice repeated successfully.");
+    } else {
+        ActivityPubReturn::error('No object id was specified.');
+    }
 } catch (Exception $e) {
     ActivityPubReturn::error($e->getMessage(), 403);
 }

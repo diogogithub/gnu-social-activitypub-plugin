@@ -91,32 +91,35 @@ class apSharedInboxAction extends ManagedAction
 
         // Process request
         switch ($data->type) {
-                        case "Create":
-                                require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Create.php";
-                                break;
-                        case "Follow":
-                                require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Follow.php";
-                                break;
-                        case "Like":
-                                require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Like.php";
-                                break;
-                        case "Announce":
-                                require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Announce.php";
-                                break;
-                        case "Undo":
-                                require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Undo.php";
-                                break;
-                        case "Delete":
-                                require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Delete.php";
-                                break;
-                        case "Accept":
-                                require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Accept.php";
-                                break;
-                        case "Reject":
-                                require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Reject.php";
-                                break;
-                        default:
-                                ActivityPubReturn::error("Invalid type value.");
-                }
+            // Data available:
+            // Profile       $actor_profile
+            // string|object $data->object
+            case "Create":
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Create.php";
+                    break;
+            case "Follow":
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Follow.php";
+                    break;
+            case "Like":
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Like.php";
+                    break;
+            case "Announce":
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Announce.php";
+                    break;
+            case "Undo":
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Undo.php";
+                    break;
+            case "Delete":
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Delete.php";
+                    break;
+            case "Accept":
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Accept.php";
+                    break;
+            case "Reject":
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Reject.php";
+                    break;
+            default:
+                    ActivityPubReturn::error("Invalid type value.");
+        }
     }
 }
