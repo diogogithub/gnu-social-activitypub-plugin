@@ -50,11 +50,13 @@ class Activitypub_follow extends Managed_DataObject
      */
     public static function follow_to_array($actor, $object)
     {
-        $res = array("@context" => "https://www.w3.org/ns/activitystreams",
-                              "type"   => "Follow",
-                              "actor"  => $actor,
-                              "object" => $object
-                             );
+        $res = [
+            '@context' => 'https://www.w3.org/ns/activitystreams',
+            'id'     => common_root_url().'follow_from_'.urlencode($actor).'_to_'.urlencode($object),
+            'type'   => 'Follow',
+            'actor'  => $actor,
+            'object' => $object
+       ];
         return $res;
     }
 }
