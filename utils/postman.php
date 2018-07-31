@@ -116,7 +116,7 @@ class Activitypub_postman
         $res = $this->send(json_encode($data), $this->to[0]->get_inbox());
         $res_body = json_decode($res->getBody()->getContents());
 
-        if ($res->getStatusCode() == 200 || $res->getStatusCode() == 409) {
+        if ($res->getStatusCode() == 200 || $res->getStatusCode() == 202 || $res->getStatusCode() == 409) {
             $pending_list = new Activitypub_pending_follow_requests($this->actor->getID(), $this->to[0]->getID());
             if (! ($res->getStatusCode() == 202 || $res_body->type == "Accept" || $res->getStatusCode() == 409)) {
                 $pending_list->add();
