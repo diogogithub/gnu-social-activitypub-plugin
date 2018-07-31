@@ -30,7 +30,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 // Validate Object
-if (!is_string($data->object)) {
+if (!filter_var($data->object, FILTER_VALIDATE_URL)) {
     ActivityPubReturn::error("Invalid Object object, URL expected.");
 }
 
@@ -46,7 +46,7 @@ try {
     if (!Subscription::exists($actor_profile, $object_profile)) {
         Subscription::start($actor_profile, $object_profile);
         common_debug('ActivityPubPlugin: Accepted Follow request from '.$data->actor.' to '.$data->object);
-        $postman = new Activitypub_postman($data->actor);
+        $postman = new Activitypub_postman($actor_profile);
         $postman->send(json_encode(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object))), Activitypub_profile::from_profile($object_profile)->getInbox());
         ActivityPubReturn::answer('', 202);
     } else {
