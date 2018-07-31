@@ -72,20 +72,20 @@ class Activitypub_notice extends Managed_DataObject
         $to[]= 'https://www.w3.org/ns/activitystreams#Public';
 
         $item = [
-                '@context'          => 'https://www.w3.org/ns/activitystreams',
-                'id'               => $notice->getUrl(),
-                'type'             => 'Note',
-                'published'        => str_replace(' ', 'T', $notice->getCreated()).'Z',
-                'url'              => $notice->getUrl(),
-                'atributtedTo'      => ActivityPubPlugin::actor_uri($profile),
-                'to'               => $to,
-                'cc'               => common_local_url('apActorFollowers', ['id' => $profile->getID()]),
-                'atomUri'          => $notice->getUrl(),
-                'conversation'     => $notice->getConversationUrl(),
-                'content'          => $notice->getContent(),
-                'isLocal'         => $notice->isLocal(),
-                'attachment'       => $attachments,
-                'tag'              => $tags
+            '@context'     => 'https://www.w3.org/ns/activitystreams',
+            'id'           => $notice->getUrl(),
+            'type'         => 'Note',
+            'published'    => str_replace(' ', 'T', $notice->getCreated()).'Z',
+            'url'          => $notice->getUrl(),
+            'atributtedTo' => ActivityPubPlugin::actor_uri($profile),
+            'to'           => $to,
+            'cc'           => common_local_url('apActorFollowers', ['id' => $profile->getID()]),
+            'atomUri'      => $notice->getUrl(),
+            'conversation' => $notice->getConversationUrl(),
+            'content'      => $notice->getContent(),
+            'isLocal'      => $notice->isLocal(),
+            'attachment'   => $attachments,
+            'tag'          => $tags
         ];
 
         // Is this a reply?
@@ -93,7 +93,7 @@ class Activitypub_notice extends Managed_DataObject
             $item['inReplyTo'] = Notice::getById($notice->reply_to)->getUrl();
             $item['inReplyToAtomUri'] = Notice::getById($notice->reply_to)->getUrl();
         }
-        
+
         // Do we have a location for this notice?
         try {
             $location = Notice_location::locFromStored($notice);

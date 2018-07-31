@@ -46,7 +46,9 @@ try {
     if (!Subscription::exists($actor_profile, $object_profile)) {
         Subscription::start($actor_profile, $object_profile);
         common_debug('ActivityPubPlugin: Accepted Follow request from '.$data->actor.' to '.$data->object);
-        ActivityPubReturn::answer(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object)), 202);
+        $postman = new Activitypub_postman($data->actor);
+        $postman->send(json_encode(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object))), Activitypub_profile::from_profile($object_profile)->getInbox());
+        ActivityPubReturn::answer('', 202);
     } else {
         common_debug('ActivityPubPlugin: Received a repeated Follow request from '.$data->actor.' to '.$data->object);
         ActivityPubReturn::error("Already following.", 409);

@@ -118,11 +118,7 @@ class Activitypub_postman
 
         if ($res->getStatusCode() == 200 || $res->getStatusCode() == 202 || $res->getStatusCode() == 409) {
             $pending_list = new Activitypub_pending_follow_requests($this->actor->getID(), $this->to[0]->getID());
-            if (! ($res->getStatusCode() == 202 || $res_body->type == "Accept" || $res->getStatusCode() == 409)) {
-                $pending_list->add();
-                throw new Exception("Your follow request is pending acceptation.");
-            }
-            $pending_list->remove();
+            $pending_list->add();
             return true;
         } elseif (isset($res_body[0]->error)) {
             throw new Exception($res_body[0]->error);
