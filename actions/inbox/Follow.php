@@ -38,6 +38,7 @@ if (!filter_var($data->object, FILTER_VALIDATE_URL)) {
 try {
     $object_profile = new Activitypub_explorer;
     $object_profile = $object_profile->lookup($data->object)[0];
+    $object_profile = Activitypub_profile::from_profile($object_profile);
 } catch (Exception $e) {
     ActivityPubReturn::error("Invalid Object Actor URL.", 404);
 }
@@ -47,7 +48,7 @@ try {
         Subscription::start($actor_profile, $object_profile);
         common_debug('ActivityPubPlugin: Accepted Follow request from '.$data->actor.' to '.$data->object);
         $postman = new Activitypub_postman($actor_profile);
-        $postman->send(json_encode(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object))), Activitypub_profile::from_profile($object_profile)->getInbox());
+        $postman->send(json_encode(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object))), $object_profile->getInbox());
         ActivityPubReturn::answer('', 202);
     } else {
         common_debug('ActivityPubPlugin: Received a repeated Follow request from '.$data->actor.' to '.$data->object);
