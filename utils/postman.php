@@ -118,13 +118,17 @@ class Activitypub_postman
 
         if ($res->getStatusCode() == 200 || $res->getStatusCode() == 409) {
             $pending_list = new Activitypub_pending_follow_requests($this->actor->getID(), $this->to[0]->getID());
-            $pending_list->add();
+            if (! ($res->getStatusCode() == 202 || $res_body->type == "Accept" || $res->getStatusCode() == 409)) {
+                $pending_list->add();
+                throw new Exception("Your follow request is pending acceptation.");
+            }
+            $pending_list->remove();
             return true;
         } elseif (isset($res_body[0]->error)) {
             throw new Exception($res_body[0]->error);
-        } else {
-            throw new Exception("An unknown error occurred.");
         }
+
+        throw new Exception("An unknown error occurred.");
     }
 
     /**
