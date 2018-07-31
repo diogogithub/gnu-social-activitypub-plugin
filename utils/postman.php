@@ -100,7 +100,7 @@ class Activitypub_postman
     {
         common_debug('ActivityPub Postman: Delivering '.$data.' to '.$inbox);
         $response = $this->client->request($method, $inbox, ['headers' => array_merge($this->headers, ['(request-target)' => strtolower($method).' '.parse_url($inbox, PHP_URL_PATH)]),'body' => $data]);
-        common_debug('ActivityPub Postman: Delivery result: '.$response->getBody()->getContents());
+        common_debug('ActivityPub Postman: Delivery result with status code '.$response->getStatusCode().': '.$response->getBody()->getContents());
         return $response;
     }
     

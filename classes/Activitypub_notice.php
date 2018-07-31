@@ -99,7 +99,7 @@ class Activitypub_notice extends Managed_DataObject
             $location = Notice_location::locFromStored($notice);
             $item['latitude']  = $location->lat;
             $item['longitude'] = $location->lon;
-        } catch (Exception $ex) {
+        } catch (Exception $e) {
             // Apparently no.
         }
 
