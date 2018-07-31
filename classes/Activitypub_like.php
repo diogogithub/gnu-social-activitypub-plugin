@@ -55,6 +55,7 @@ class Activitypub_like extends Managed_DataObject
                     'https://www.w3.org/ns/activitystreams',
                     'https://w3id.org/security/v1'
             ],
+            'id'     => common_root_url().'like_from_'.urlencode($actor).'_to_'.urlencode($object),
             "type"   => "Like",
             "actor"  => $actor,
             "object" => $object
