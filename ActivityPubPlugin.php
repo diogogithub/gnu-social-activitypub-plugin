@@ -871,8 +871,9 @@ class ActivityPubReturn
      * @param array $res
      * @return void
      */
-    public static function answer($res)
+    public static function answer($res, $code = 200)
     {
+        http_response_code($code);
         header('Content-Type: application/activity+json');
         echo json_encode($res, JSON_UNESCAPED_SLASHES | (isset($_GET["pretty"]) ? JSON_PRETTY_PRINT : null));
         exit;

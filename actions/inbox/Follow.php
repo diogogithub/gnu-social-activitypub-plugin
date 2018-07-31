@@ -45,7 +45,7 @@ try {
 try {
     if (!Subscription::exists($actor_profile, $object_profile)) {
         Subscription::start($actor_profile, $object_profile);
-        ActivityPubReturn::answer(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object)));
+        ActivityPubReturn::answer(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object)), 202);
     } else {
         ActivityPubReturn::error("Already following.", 409);
     }
