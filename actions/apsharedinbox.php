@@ -56,7 +56,6 @@ class apSharedInboxAction extends ManagedAction
         }
 
         common_debug('ActivityPub Shared Inbox: Received a POST request.');
-
         $data = file_get_contents('php://input');
         common_debug('ActivityPub Shared Inbox: Request contents: '.$data);
         $data = json_decode(file_get_contents('php://input'));

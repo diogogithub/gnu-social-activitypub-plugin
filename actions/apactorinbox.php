@@ -65,6 +65,9 @@ class apActorInboxAction extends ManagedAction
             ActivityPubReturn::error("C2S not implemented just yet.");
         }
 
+        common_debug('ActivityPub Inbox: Received a POST request.');
+        $data = file_get_contents('php://input');
+        common_debug('ActivityPub Inbox: Request contents: '.$data);
         $data = json_decode(file_get_contents('php://input'));
 
         // Validate data
