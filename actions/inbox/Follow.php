@@ -54,7 +54,8 @@ if (!Subscription::exists($actor_profile, $object_profile)) {
     Subscription::start($actor_profile, $object_profile);
     common_debug('ActivityPubPlugin: Accepted Follow request from '.$data->actor.' to '.$data->object);
 
-    // Send Accept back
+    // Notify remote instance that we have accepted their request
+    common_debug('ActivityPubPlugin: Notifying remote instance that we have accepted their Follow request request from '.$data->actor.' to '.$data->object);
     $postman = new Activitypub_postman($actor_profile);
     $postman->send(json_encode(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object))), $actor_aprofile->get_inbox());
     ActivityPubReturn::answer('', 202);
