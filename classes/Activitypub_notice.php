@@ -77,7 +77,7 @@ class Activitypub_notice extends Managed_DataObject
                 'type'             => 'Note',
                 'published'        => str_replace(' ', 'T', $notice->getCreated()).'Z',
                 'url'              => $notice->getUrl(),
-                'atributedTo'      => ActivityPubPlugin::actor_uri($profile),
+                'atributtedTo'      => ActivityPubPlugin::actor_uri($profile),
                 'to'               => $to,
                 'cc'               => common_local_url('apActorFollowers', ['id' => $profile->getID()]),
                 'atomUri'          => $notice->getUrl(),
