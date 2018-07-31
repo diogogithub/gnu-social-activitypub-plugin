@@ -29,18 +29,14 @@ if (!defined('GNUSOCIAL')) {
     exit(1);
 }
 
-if (!isset($data->object->id)) {
-    ActivityPubReturn::error("Id not specified.");
-}
-
 try {
     try {
-        $object_notice = ActivityPubPlugin::get_local_notice_from_url($data->object->id);
+        $object_notice = ActivityPubPlugin::get_local_notice_from_url($data->object);
     } catch (Exception $e) {
         ActivityPubReturn::error("Invalid Object ID value.");
     }
     Fave::addNew($actor_profile, $object_notice);
-    ActivityPubReturn::answer(Activitypub_like::like_to_array($data->actor, Activitypub_notice::notice_to_array($object_notice)));
+    ActivityPubReturn::answer(Activitypub_like::like_to_array($data->actor, $object_notice));
 } catch (Exception $e) {
     ActivityPubReturn::error($e->getMessage(), 403);
 }
