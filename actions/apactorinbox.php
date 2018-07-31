@@ -58,11 +58,11 @@ class apActorInboxAction extends ManagedAction
         }
 
         if (!$profile->isLocal()) {
-            ActivityPubReturn::error("This is not a local user.");
+            ActivityPubReturn::error('This is not a local user.');
         }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            ActivityPubReturn::error("C2S not implemented just yet.");
+            ActivityPubReturn::error('C2S not implemented just yet.');
         }
 
         common_debug('ActivityPub Inbox: Received a POST request.');
@@ -72,31 +72,34 @@ class apActorInboxAction extends ManagedAction
 
         // Validate data
         if (!(isset($data->type))) {
-            ActivityPubReturn::error("Type was not specified.");
+            ActivityPubReturn::error('Type was not specified.');
         }
         if (!isset($data->actor)) {
-            ActivityPubReturn::error("Actor was not specified.");
+            ActivityPubReturn::error('Actor was not specified.');
         }
         if (!isset($data->object)) {
-            ActivityPubReturn::error("Object was not specified.");
+            ActivityPubReturn::error('Object was not specified.');
         }
 
+        $discovery = new Activitypub_explorer;
         // Get valid Actor object
         try {
-            require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "explorer.php";
-            $actor_profile = new Activitypub_explorer;
-            $actor_profile = $actor_profile->lookup($data->actor);
+            $actor_profile = $discovery->lookup($data->actor);
             $actor_profile = $actor_profile[0];
         } catch (Exception $e) {
-            ActivityPubReturn::error("Invalid Actor.", 404);
+            ActivityPubReturn::error('Invalid Actor.', 404);
         }
+        unset($discovery);
 
         // Public To:
-        $public_to = array("https://www.w3.org/ns/activitystreams#Public",
-                                    "Public",
-                                    "as:Public");
+        $public_to = ['https://www.w3.org/ns/activitystreams#Public',
+                      'Public',
+                      'as:Public'
+                     ];
 
-        $to_profiles = array($profile);
+        $to_profiles = [ActivityPubPlugin::actor_uri($profile),
+                        'https://www.w3.org/ns/activitystreams#Public'
+                       ];
 
         // Process request
         switch ($data->type) {

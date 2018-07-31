@@ -52,7 +52,7 @@ class apSharedInboxAction extends ManagedAction
     protected function handle()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            ActivityPubReturn::error("Only POST requests allowed.");
+            ActivityPubReturn::error('Only POST requests allowed.');
         }
 
         common_debug('ActivityPub Shared Inbox: Received a POST request.');
@@ -62,13 +62,13 @@ class apSharedInboxAction extends ManagedAction
 
         // Validate data
         if (!isset($data->type)) {
-            ActivityPubReturn::error("Type was not specified.");
+            ActivityPubReturn::error('Type was not specified.');
         }
         if (!isset($data->actor)) {
-            ActivityPubReturn::error("Actor was not specified.");
+            ActivityPubReturn::error('Actor was not specified.');
         }
         if (!isset($data->object)) {
-            ActivityPubReturn::error("Object was not specified.");
+            ActivityPubReturn::error('Object was not specified.');
         }
 
         $discovery = new Activitypub_explorer;
@@ -77,49 +77,49 @@ class apSharedInboxAction extends ManagedAction
             $actor_profile = $discovery->lookup($data->actor);
             $actor_profile = $actor_profile[0];
         } catch (Exception $e) {
-            ActivityPubReturn::error("Invalid Actor.", 404);
+            ActivityPubReturn::error('Invalid Actor.', 404);
         }
         unset($discovery);
 
         // Public To:
-        $public_to = ["https://www.w3.org/ns/activitystreams#Public",
-                      "Public",
-                      "as:Public"
+        $public_to = ['https://www.w3.org/ns/activitystreams#Public',
+                      'Public',
+                      'as:Public'
                      ];
 
-        $to_profiles = "https://www.w3.org/ns/activitystreams#Public";
+        $to_profiles = 'https://www.w3.org/ns/activitystreams#Public';
 
         // Process request
         switch ($data->type) {
             // Data available:
             // Profile       $actor_profile
             // string|object $data->object
-            case "Create":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Create.php";
+            case 'Create':
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . 'inbox' . DIRECTORY_SEPARATOR . 'Create.php';
                     break;
-            case "Follow":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Follow.php";
+            case 'Follow':
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . 'inbox' . DIRECTORY_SEPARATOR . 'Follow.php';
                     break;
-            case "Like":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Like.php";
+            case 'Like':
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . 'inbox' . DIRECTORY_SEPARATOR . 'Like.php';
                     break;
-            case "Announce":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Announce.php";
+            case 'Announce':
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . 'inbox' . DIRECTORY_SEPARATOR . 'Announce.php';
                     break;
-            case "Undo":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Undo.php";
+            case 'Undo':
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . 'inbox' . DIRECTORY_SEPARATOR . 'Undo.php';
                     break;
-            case "Delete":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Delete.php";
+            case 'Delete':
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . 'inbox' . DIRECTORY_SEPARATOR . 'Delete.php';
                     break;
-            case "Accept":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Accept.php";
+            case 'Accept':
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . 'inbox' . DIRECTORY_SEPARATOR . 'Accept.php';
                     break;
-            case "Reject":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Reject.php";
+            case 'Reject':
+                    require_once __DIR__ . DIRECTORY_SEPARATOR . 'inbox' . DIRECTORY_SEPARATOR . 'Reject.php';
                     break;
             default:
-                    ActivityPubReturn::error("Invalid type value.");
+                    ActivityPubReturn::error('Invalid type value.');
         }
     }
 }
