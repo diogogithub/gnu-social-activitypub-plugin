@@ -45,10 +45,13 @@ try {
 try {
     if (!Subscription::exists($actor_profile, $object_profile)) {
         Subscription::start($actor_profile, $object_profile);
+        common_debug('ActivityPubPlugin: Accepted Follow request from '.$data->actor.' to '.$data->object);
         ActivityPubReturn::answer(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object)), 202);
     } else {
+        common_debug('ActivityPubPlugin: Received a repeated Follow request from '.$data->actor.' to '.$data->object);
         ActivityPubReturn::error("Already following.", 409);
     }
 } catch (Exception $e) {
+    common_debug('ActivityPubPlugin: An error ocurred processing Follow request from '.$data->actor.' to '.$data->object);
     ActivityPubReturn::error("Invalid Object Actor URL.", 404);
 }
