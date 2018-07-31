@@ -38,10 +38,10 @@ switch ($data->object->type) {
 case "Like":
         try {
             // Validate data
-            if (!isset($data->object->object->id)) {
-                ActivityPubReturn::error("Notice ID was not specified.");
+            if (!isset($data->object->object)) {
+                ActivityPubReturn::error("Notice URI was not specified.");
             }
-            Fave::removeEntry($actor_profile, ActivityPubPlugin::get_local_notice_from_url($data->object->object->id));
+            Fave::removeEntry($actor_profile, ActivityPubPlugin::get_local_notice_from_url($data->object->object));
             // Notice disfavorited successfully.
             ActivityPubReturn::answer(
                 Activitypub_undo::undo_to_array(
