@@ -55,7 +55,7 @@ class Activitypub_explorer
      */
     public function lookup($url)
     {
-        common_debug("Explorer started now looking for ".$url);
+        common_debug('ActivityPub Explorer: Started now looking for '.$url);
         $this->discovered_actor_profiles = array();
 
         return $this->_lookup($url);
@@ -75,7 +75,7 @@ class Activitypub_explorer
         // First check if we already have it locally and, if so, return it
         // If the local fetch fails: grab it remotely, store locally and return
         if (! ($this->grab_local_user($url) || $this->grab_remote_user($url))) {
-            throw new Exception("User not found.");
+            throw new Exception('User not found.');
         }
 
         return $this->discovered_actor_profiles;
