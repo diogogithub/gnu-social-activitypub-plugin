@@ -101,7 +101,7 @@ class Activitypub_explorer
             $this->temp_res = $res;
             return true;
         } else {
-            common_debug('ActivityPub Explorer: Invalid potential remote actor while ensuring URI: '.$url. '. He returned the following: '.json_encode($res, JSON_PRETTY_PRINT));
+            common_debug('ActivityPub Explorer: Invalid potential remote actor while ensuring URI: '.$url. '. He returned the following: '.json_encode($res, JSON_UNESCAPED_SLASHES));
         }
 
         return false;
@@ -208,7 +208,7 @@ class Activitypub_explorer
             $this->discovered_actor_profiles[]= $this->store_profile($res);
             return true;
         } else {
-            common_debug('ActivityPub Explorer: Invalid potential remote actor while grabbing remotely: '.$url. '. He returned the following: '.json_encode($res, JSON_PRETTY_PRINT));
+            common_debug('ActivityPub Explorer: Invalid potential remote actor while grabbing remotely: '.$url. '. He returned the following: '.json_encode($res, JSON_UNESCAPED_SLASHES));
         }
 
         return false;
