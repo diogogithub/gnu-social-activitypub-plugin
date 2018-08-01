@@ -58,7 +58,7 @@ class Activitypub_postman
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $from Profile of sender
-     * @param Activitypub_profile $to array of destinataries
+     * @param Array of Activitypub_profile $to destinataries
      */
     public function __construct($from, $to = [])
     {

@@ -30,12 +30,13 @@ if (!defined('GNUSOCIAL')) {
 }
 
 try {
-    if (isset($data->object)) {
-        ActivityPubPlugin::get_local_notice_from_url($data->object)->repeat($actor_profile, "ActivityPub");
-        ActivityPubReturn::answer("Notice repeated successfully.");
-    } else {
-        ActivityPubReturn::error('No object id was specified.');
+    try {
+        $object_notice = ActivityPubPlugin::get_local_notice_from_url($data->object);
+    } catch (Exception $e) {
+        ActivityPubReturn::error('Invalid Object specified.');
     }
+    $object_notice->repeat($actor_profile, 'ActivityPub');
+    ActivityPubReturn::answer();
 } catch (Exception $e) {
     ActivityPubReturn::error($e->getMessage(), 403);
 }

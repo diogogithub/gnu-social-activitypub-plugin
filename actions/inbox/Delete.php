@@ -31,9 +31,8 @@ if (!defined('GNUSOCIAL')) {
 
 try {
     $notice = ActivityPubPlugin::get_local_notice_from_url($data->object->id);
-    $notice_to_array = Activitypub_notice::notice_to_array($notice);
     $notice->deleteAs($actor_profile);
-    ActivityPubReturn::answer(Activitypub_delete::delete_to_array($notice_to_array));
+    ActivityPubReturn::answer();
 } catch (Exception $e) {
     ActivityPubReturn::error($e->getMessage(), 403);
 }

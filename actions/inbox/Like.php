@@ -33,10 +33,10 @@ try {
     try {
         $object_notice = ActivityPubPlugin::get_local_notice_from_url($data->object);
     } catch (Exception $e) {
-        ActivityPubReturn::error("Invalid Object specified.");
+        ActivityPubReturn::error('Invalid Object specified.');
     }
     Fave::addNew($actor_profile, $object_notice);
-    ActivityPubReturn::answer(Activitypub_like::like_to_array($data->actor, $data->object));
+    ActivityPubReturn::answer();
 } catch (Exception $e) {
     ActivityPubReturn::error($e->getMessage(), 403);
 }

@@ -43,14 +43,7 @@ switch ($data->object->type) {
             }
             Fave::removeEntry($actor_profile, ActivityPubPlugin::get_local_notice_from_url($data->object->object));
             // Notice disfavorited successfully.
-            ActivityPubReturn::answer(
-                Activitypub_undo::undo_to_array(
-                                        Activitypub_like::like_to_array(
-                                             $actor_profile->getUrl(),
-                                             $data->object->object
-                                        )
-                )
-            );
+            ActivityPubReturn::answer();
         } catch (Exception $e) {
             ActivityPubReturn::error($e->getMessage(), 403);
         }
@@ -71,22 +64,15 @@ switch ($data->object->type) {
         if (Subscription::exists($actor_profile, $object_profile)) {
             Subscription::cancel($actor_profile, $object_profile);
             // You are no longer following this person.
-            ActivityPubReturn::answer(
-                    Activitypub_undo::undo_to_array(
-                                            Activitypub_accept::accept_to_array(
-                                             Activitypub_follow::follow_to_array(
-                                                 $actor_profile->getUrl(),
-                                                 $object_profile->getUrl()
-                                             )
-                                            )
-                    )
-            );
+            ActivityPubReturn::answer();
         } else {
-            ActivityPubReturn::error('You are not following this person already.', 409);
+            // 409: You are not following this person already.
+            ActivityPubReturn::answer();
         }
         break;
     case 'Announce':
-        ActivityPubReturn::answer(); // TODO: Implement Undo Announce
+        // This is a dummy entry point as GNU Social doesn't allow Undo Announce
+        ActivityPubReturn::answer();
     default:
         ActivityPubReturn::error('Invalid object type.');
         break;

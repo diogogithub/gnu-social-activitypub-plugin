@@ -56,9 +56,9 @@ if (!Subscription::exists($actor_profile, $object_profile)) {
 
     // Notify remote instance that we have accepted their request
     common_debug('ActivityPubPlugin: Notifying remote instance that we have accepted their Follow request request from '.$data->actor.' to '.$data->object);
-    $postman = new Activitypub_postman($actor_profile);
-    $postman->send(json_encode(Activitypub_accept::accept_to_array(Activitypub_follow::follow_to_array($data->actor, $data->object))), $actor_aprofile->get_inbox());
-    ActivityPubReturn::answer('', 202);
+    $postman = new Activitypub_postman($actor_profile, [$actor_aprofile]);
+    $postman->follow();
+    ActivityPubReturn::answer();
 } else {
     common_debug('ActivityPubPlugin: Received a repeated Follow request from '.$data->actor.' to '.$data->object);
     ActivityPubReturn::error('Already following.', 409);

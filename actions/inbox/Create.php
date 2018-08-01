@@ -129,12 +129,8 @@ $actobj->content = strip_tags($content,'<p><b><i><u><a><ul><ol><li>');
 $act->objects[] = $actobj;
 
 try {
-    $res = Activitypub_create::create_to_array(
-            $data->id,
-            $data->actor,
-                    Activitypub_notice::notice_to_array(Notice::saveActivity($act, $actor_profile, $options))
-        );
-    ActivityPubReturn::answer($res);
+    Notice::saveActivity($act, $actor_profile, $options);
+    ActivityPubReturn::answer();
 } catch (Exception $e) {
     ActivityPubReturn::error($e->getMessage());
 }

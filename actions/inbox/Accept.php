@@ -50,7 +50,7 @@ case "Follow":
 
         $pending_list = new Activitypub_pending_follow_requests($actor_profile->getID(), $object_profile->getID());
         $pending_list->remove();
-        ActivityPubReturn::answer($data); // You are now being followed by this person.
+        ActivityPubReturn::answer(); // You are now being followed by this person.
         break;
 default:
         ActivityPubReturn::error("Invalid object type.");
