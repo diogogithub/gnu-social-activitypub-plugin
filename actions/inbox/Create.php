@@ -76,14 +76,10 @@ if (isset($data->object->inReplyTo)) {
 
 $discovery = new Activitypub_explorer;
 
-if ($to_profiles == ['https://www.w3.org/ns/activitystreams#Public']) {
-    $to_profiles = [];
-}
-
 // Generate Cc objects
 if (isset($data->object->cc) && is_array($data->object->cc)) {
     // Remove duplicates from Cc actors set
-    array_unique($data->object->to);
+    array_unique($data->object->cc);
     foreach ($data->object->cc as $cc_url) {
         try {
             $to_profiles = array_merge($to_profiles, $discovery->lookup($cc_url));
