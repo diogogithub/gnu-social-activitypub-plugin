@@ -29,27 +29,27 @@ if (!defined('GNUSOCIAL')) {
     exit(1);
 }
 
-$valid_object_types = array("Note");
+$valid_object_types = ['Note'];
 
 // Validate data
 if (!isset($data->object->id)) {
-    ActivityPubReturn::error("Object ID not specified.");
+    ActivityPubReturn::error('Object ID not specified.');
 } elseif (!filter_var($data->object->id, FILTER_VALIDATE_URL)) {
-    ActivityPubReturn::error("Invalid Object ID.");
+    ActivityPubReturn::error('Invalid Object ID.');
 }
 if (!(isset($data->object->type) && in_array($data->object->type, $valid_object_types))) {
-    ActivityPubReturn::error("Invalid Object type.");
+    ActivityPubReturn::error('Invalid Object type.');
 }
 if (!isset($data->object->content)) {
-    ActivityPubReturn::error("Object content was not specified.");
+    ActivityPubReturn::error('Object content was not specified.');
 }
 if (!isset($data->object->url)) {
-    ActivityPubReturn::error("Object url was not specified.");
+    ActivityPubReturn::error('Object url was not specified.');
 } elseif (!filter_var($data->object->url, FILTER_VALIDATE_URL)) {
-    ActivityPubReturn::error("Invalid Object URL.");
+    ActivityPubReturn::error('Invalid Object URL.');
 }
 if (!isset($data->object->to)) {
-    ActivityPubReturn::error("Object To was not specified.");
+    ActivityPubReturn::error('Object To was not specified.');
 }
 
 $content = $data->object->content;
@@ -74,10 +74,9 @@ if (isset($data->object->inReplyTo)) {
     $inReplyTo = null;
 }
 
-$act->context->attention = common_get_attentions($content, $actor_profile, $inReplyTo);
-
 $discovery = new Activitypub_explorer;
-if ($to_profiles == "https://www.w3.org/ns/activitystreams#Public") {
+
+if ($to_profiles == ['https://www.w3.org/ns/activitystreams#Public']) {
     $to_profiles = [];
 }
 
@@ -114,12 +113,11 @@ if (isset($data->object->latitude, $data->object->longitude)) {
 }
 
 // Reject notice if it is too long (without the HTML)
-// This is done after MediaFile::fromUpload etc. just to act the same as the ApiStatusesUpdateAction
 if (Notice::contentTooLong($content)) {
     ActivityPubReturn::error("That's too long. Maximum notice size is %d character.");
 }
 
-$options = array('source' => 'ActivityPub', 'uri' => isset($data->id) ? $data->id : $data->object->url, 'url' => $data->object->url);
+$options = array('source' => 'ActivityPub', 'uri' => isset($data->id) ? $data->id : $data->object->id, 'url' => $data->object->url);
 // $options gets filled with possible scoping settings
 ToSelector::fillActivity($this, $act, $options);
 

@@ -87,7 +87,7 @@ class apSharedInboxAction extends ManagedAction
                       'as:Public'
                      ];
 
-        $to_profiles = 'https://www.w3.org/ns/activitystreams#Public';
+        $to_profiles = ['https://www.w3.org/ns/activitystreams#Public'];
 
         // Process request
         switch ($data->type) {
