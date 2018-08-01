@@ -62,9 +62,9 @@ class Activitypub_notice extends Managed_DataObject
             }
         }
 
-        $to = [];
+        $cc = [common_local_url('apActorFollowers', ['id' => $profile->getID()])];
         foreach ($notice->getAttentionProfiles() as $to_profile) {
-            $to[]  = $href = $to_profile->getUri();
+            $cc[]  = $href = $to_profile->getUri();
             $tags[] = Activitypub_mention_tag::mention_tag_to_array_from_values($href, $to_profile->getNickname().'@'.parse_url($href, PHP_URL_HOST));
         }
 
@@ -78,11 +78,11 @@ class Activitypub_notice extends Managed_DataObject
             'published'    => str_replace(' ', 'T', $notice->getCreated()).'Z',
             'url'          => $notice->getUrl(),
             'atributtedTo' => ActivityPubPlugin::actor_uri($profile),
-            'to'           => $to,
-            'cc'           => common_local_url('apActorFollowers', ['id' => $profile->getID()]),
+            'to'           => ['https://www.w3.org/ns/activitystreams#Public'],
+            'cc'           => $cc,
             'atomUri'      => $notice->getUrl(),
             'conversation' => $notice->getConversationUrl(),
-            'content'      => $notice->getContent(),
+            'content'      => $notice->getRendered(),
             'isLocal'      => $notice->isLocal(),
             'attachment'   => $attachments,
             'tag'          => $tags

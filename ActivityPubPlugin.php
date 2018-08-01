@@ -99,10 +99,12 @@ class ActivityPubPlugin extends Plugin
                 if ($candidate->getUrl() == $url) { // Sanity check
                     return $candidate;
                 } else {
-                    throw new Exception("Notice not found.");
+                    common_debug ('ActivityPubPlugin Notice Grabber: '.$candidate->getUrl(). ' is different of '.$url);
+                    throw new Exception('Notice not found.');
                 }
             } catch (Exception $e) {
-                throw new Exception("Notice not found.");
+                common_debug ('ActivityPubPlugin Notice Grabber failed to find: '.$url);
+                throw new Exception('Notice not found.');
             }
         }
     }

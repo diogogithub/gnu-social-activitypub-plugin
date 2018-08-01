@@ -78,28 +78,9 @@ $act->context->attention = common_get_attentions($content, $actor_profile, $inRe
 
 $discovery = new Activitypub_explorer;
 if ($to_profiles == "https://www.w3.org/ns/activitystreams#Public") {
-    $to_profiles = array();
+    $to_profiles = [];
 }
-// Generate To objects
-if (is_array($data->object->to)) {
-    // Remove duplicates from To actors set
-    array_unique($data->object->to);
-    foreach ($data->object->to as $to_url) {
-        try {
-            $to_profiles = array_merge($to_profiles, $discovery->lookup($to_url));
-        } catch (Exception $e) {
-            // Invalid actor found, just let it go.
-        }
-    }
-} elseif (empty($data->object->to) || in_array($data->object->to, $public_to)) {
-    // No need to do anything else at this point, let's just break out the if
-} else {
-    try {
-        $to_profiles = array_merge($to_profiles, $discovery->lookup($data->object->to));
-    } catch (Exception $e) {
-        // Invalid actor found, just let it go.
-    }
-}
+
 // Generate Cc objects
 if (isset($data->object->cc) && is_array($data->object->cc)) {
     // Remove duplicates from Cc actors set
@@ -144,7 +125,7 @@ ToSelector::fillActivity($this, $act, $options);
 
 $actobj = new ActivityObject();
 $actobj->type = ActivityObject::NOTE;
-$actobj->content = common_render_content($content, $actor_profile, $inReplyTo);
+$actobj->content = strip_tags($content,'<p><b><i><u><a><ul><ol><li>');
 
 // Finally add the activity object to our activity
 $act->objects[] = $actobj;
