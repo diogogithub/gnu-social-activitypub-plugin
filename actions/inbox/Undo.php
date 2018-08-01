@@ -31,15 +31,15 @@ if (!defined('GNUSOCIAL')) {
 
 // Validate data
 if (!isset($data->type)) {
-    ActivityPubReturn::error("Type was not specified.");
+    ActivityPubReturn::error('Type was not specified.');
 }
 
 switch ($data->object->type) {
-case "Like":
+    case 'Like':
         try {
             // Validate data
             if (!isset($data->object->object)) {
-                ActivityPubReturn::error("Notice URI was not specified.");
+                ActivityPubReturn::error('Notice URI was not specified.');
             }
             Fave::removeEntry($actor_profile, ActivityPubPlugin::get_local_notice_from_url($data->object->object));
             // Notice disfavorited successfully.
@@ -55,17 +55,17 @@ case "Like":
             ActivityPubReturn::error($e->getMessage(), 403);
         }
         break;
-case "Follow":
+    case 'Follow':
         // Validate data
         if (!isset($data->object->object)) {
-            ActivityPubReturn::error("Object Actor URL was not specified.");
+            ActivityPubReturn::error('Object Actor URL was not specified.');
         }
         // Get valid Object profile
         try {
             $object_profile = new Activitypub_explorer;
             $object_profile = $object_profile->lookup($data->object->object)[0];
         } catch (Exception $e) {
-            ActivityPubReturn::error("Invalid Object Actor URL.", 404);
+            ActivityPubReturn::error('Invalid Object Actor URL.', 404);
         }
 
         if (Subscription::exists($actor_profile, $object_profile)) {
@@ -82,10 +82,12 @@ case "Follow":
                     )
             );
         } else {
-            ActivityPubReturn::error("You are not following this person already.", 409);
+            ActivityPubReturn::error('You are not following this person already.', 409);
         }
         break;
-default:
-        ActivityPubReturn::error("Invalid object type.");
+    case 'Announce':
+        ActivityPubReturn::answer(); // TODO: Implement Undo Announce
+    default:
+        ActivityPubReturn::error('Invalid object type.');
         break;
 }

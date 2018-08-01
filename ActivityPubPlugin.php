@@ -871,9 +871,10 @@ class ActivityPubReturn
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param array $res
+     * @param int 32 $code Status Code
      * @return void
      */
-    public static function answer($res, $code = 200)
+    public static function answer($res = '', $code = 202)
     {
         http_response_code($code);
         header('Content-Type: application/activity+json');
@@ -886,7 +887,7 @@ class ActivityPubReturn
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param string $m
-     * @param int32 $code
+     * @param int32 $code Status Code
      * @return void
      */
     public static function error($m, $code = 500)
