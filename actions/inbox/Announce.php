@@ -30,7 +30,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 try {
-    if (isset($data->object->id)) {
+    if (isset($data->object)) {
         ActivityPubPlugin::get_local_notice_from_url($data->object)->repeat($actor_profile, "ActivityPub");
         ActivityPubReturn::answer("Notice repeated successfully.");
     } else {
