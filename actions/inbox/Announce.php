@@ -31,7 +31,7 @@ if (!defined('GNUSOCIAL')) {
 
 try {
     if (isset($data->object->id)) {
-        ActivityPubPlugin::get_local_notice_from_url($data->object->id)->repeat($actor_profile, "ActivityPub");
+        ActivityPubPlugin::get_local_notice_from_url($data->object)->repeat($actor_profile, "ActivityPub");
         ActivityPubReturn::answer("Notice repeated successfully.");
     } else {
         ActivityPubReturn::error('No object id was specified.');
