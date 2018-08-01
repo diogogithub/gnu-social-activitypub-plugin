@@ -66,7 +66,7 @@ if (isset($data->object->inReplyTo)) {
     try {
         $inReplyTo = ActivityPubPlugin::get_local_notice_from_url($data->object->inReplyTo);
     } catch (Exception $e) {
-        ActivityPubReturn::error("Invalid Object inReplyTo value.");
+        ActivityPubReturn::error('Invalid Object inReplyTo value.');
     }
     $act->context->replyToID  = $inReplyTo->getUri();
     $act->context->replyToUrl = $inReplyTo->getUrl();
@@ -104,7 +104,7 @@ if (isset($data->object->cc) && is_array($data->object->cc)) {
 unset($discovery);
 
 foreach ($to_profiles as $tp) {
-    $act->context->attention[ActivityPubPlugin::actor_uri($tp)] = "http://activitystrea.ms/schema/1.0/person";
+    $act->context->attention[ActivityPubPlugin::actor_uri($tp)] = 'http://activitystrea.ms/schema/1.0/person';
 }
 
 // Add location if that is set
@@ -117,7 +117,7 @@ if (Notice::contentTooLong($content)) {
     ActivityPubReturn::error("That's too long. Maximum notice size is %d character.");
 }
 
-$options = array('source' => 'ActivityPub', 'uri' => isset($data->id) ? $data->id : $data->object->id, 'url' => $data->object->url);
+$options = array('source' => 'ActivityPub', 'uri' => $data->object->id, 'url' => $data->object->url);
 // $options gets filled with possible scoping settings
 ToSelector::fillActivity($this, $act, $options);
 

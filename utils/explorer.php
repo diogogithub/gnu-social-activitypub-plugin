@@ -228,7 +228,7 @@ class Activitypub_explorer
         $aprofile->uri            = $res['id'];
         $aprofile->nickname       = $res['preferredUsername'];
         $aprofile->fullname       = isset($res['name']) ? $res['name'] : null;
-        $aprofile->bio            = isset($res['summary']) ? substr($res['summary'], 0, 1000) : null;
+        $aprofile->bio            = isset($res['summary']) ? substr(strip_tags($res['summary']), 0, 1000) : null;
         $aprofile->inboxuri       = $res['inbox'];
         $aprofile->sharedInboxuri = isset($res['endpoints']['sharedInbox']) ? $res['endpoints']['sharedInbox'] : $res['inbox'];
 
