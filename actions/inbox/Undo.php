@@ -76,11 +76,11 @@ case "Follow":
                                             Activitypub_accept::accept_to_array(
                                              Activitypub_follow::follow_to_array(
                                                  $actor_profile->getUrl(),
-                                                                                  $object_profile->getUrl()
+                                                 $object_profile->getUrl()
                                              )
                                             )
-                )
-                                          );
+                    )
+            );
         } else {
             ActivityPubReturn::error("You are not following this person already.", 409);
         }

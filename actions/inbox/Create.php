@@ -144,7 +144,7 @@ ToSelector::fillActivity($this, $act, $options);
 
 $actobj = new ActivityObject();
 $actobj->type = ActivityObject::NOTE;
-$actobj->content = $content; //common_render_content($content, $actor_profile, $inReplyTo);
+$actobj->content = strip_tags($content,'<p><b><i><u><a><ul><ol><li>');
 
 // Finally add the activity object to our activity
 $act->objects[] = $actobj;

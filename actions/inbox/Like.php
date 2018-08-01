@@ -36,7 +36,7 @@ try {
         ActivityPubReturn::error("Invalid Object specified.");
     }
     Fave::addNew($actor_profile, $object_notice);
-    ActivityPubReturn::answer(Activitypub_like::like_to_array($data->actor, $object_notice));
+    ActivityPubReturn::answer(Activitypub_like::like_to_array($data->actor, $data->object));
 } catch (Exception $e) {
     ActivityPubReturn::error($e->getMessage(), 403);
 }
