@@ -82,7 +82,7 @@ class Activitypub_notice extends Managed_DataObject
             'cc'           => common_local_url('apActorFollowers', ['id' => $profile->getID()]),
             'atomUri'      => $notice->getUrl(),
             'conversation' => $notice->getConversationUrl(),
-            'content'      => $notice->getContent(),
+            'content'      => $notice->getRendered(),
             'isLocal'      => $notice->isLocal(),
             'attachment'   => $attachments,
             'tag'          => $tags
