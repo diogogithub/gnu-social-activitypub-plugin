@@ -50,26 +50,19 @@ class Activitypub_attachment extends Managed_DataObject
     public static function attachment_to_array($attachment)
     {
         $res = [
-                        '@context'  => [
-                                "https://www.w3.org/ns/activitystreams",
-                                [
-                                        "@language" => "en"
-                                ]
-                        ],
-                        'id'       => $attachment->getID(),
-                        'mimetype' => $attachment->mimetype,
-                        'url'      => $attachment->getUrl(),
-                        'size'     => intval($attachment->size), // $attachment->getSize ()
-                        'title'    => $attachment->getTitle(),
-                        'meta'     => null
-                ];
+                'type'      => 'Document',
+                'mediaType' => $attachment->mimetype,
+                'url'       => $attachment->getUrl(),
+                'size'      => intval($attachment->size), // $attachment->getSize ()
+                'name'      => $attachment->getTitle(),
+        ];
 
         // Image
-        if (substr($res["mimetype"], 0, 5) == "image") {
+        if (substr($res["mediaType"], 0, 5) == "image") {
             $res["meta"]= [
-                                'width'  => $attachment->width,
-                                'height' => $attachment->height
-                        ];
+                    'width'  => $attachment->width,
+                    'height' => $attachment->height
+            ];
         }
 
         return $res;

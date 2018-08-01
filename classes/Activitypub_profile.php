@@ -120,8 +120,10 @@ class Activitypub_profile extends Managed_DataObject
             'attachment' => [],
             'icon' => [
                 'type'      => 'Image',
-                'mediaType' => 'image/jpeg',
-                'url'       => $profile->avatarUrl()
+                'mediaType' => 'image/png',
+                'height'    => AVATAR_PROFILE_SIZE,
+                'width'     => AVATAR_PROFILE_SIZE,
+                'url'       => $profile->avatarUrl(AVATAR_PROFILE_SIZE)
             ]
         ];
 

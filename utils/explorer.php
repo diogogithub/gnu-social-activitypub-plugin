@@ -241,7 +241,68 @@ class Activitypub_explorer
         $apRSA->public_key = $res['publicKey']['publicKeyPem'];
         $apRSA->store_keys();
 
+        // Avatar
+        if (isset($res['icon']['url'])) {
+            $this->_store_avatar($profile, $res['icon']['url']);
+        }
+
         return $profile;
+    }
+
+    /**
+     * Download and update given avatar image
+     *
+     * @author GNU Social
+     * @param string $url
+     * @return Avatar    The Avatar we have on disk. (seldom used)
+     * @throws Exception in various failure cases
+     */
+    private function _store_avatar($profile, $url)
+    {
+        if (!common_valid_http_url($url)) {
+            // TRANS: Server exception. %s is a URL.
+            throw new ServerException(sprintf('Invalid avatar URL %s.'), $url);
+        }
+
+        // @todo FIXME: This should be better encapsulated
+        // ripped from oauthstore.php (for old OMB client)
+        $temp_filename = tempnam(sys_get_temp_dir(), 'listener_avatar');
+        try {
+            $imgData = HTTPClient::quickGet($url);
+            // Make sure it's at least an image file. ImageFile can do the rest.
+            if (false === getimagesizefromstring($imgData)) {
+                throw new UnsupportedMediaException('Downloaded group avatar was not an image.');
+            }
+            file_put_contents($temp_filename, $imgData);
+            unset($imgData);    // No need to carry this in memory.
+
+            $id = $profile->getID();
+
+            $imagefile = new ImageFile(null, $temp_filename);
+            $filename = Avatar::filename($id,
+                                         image_type_to_extension($imagefile->type),
+                                         null,
+                                         common_timestamp());
+            rename($temp_filename, Avatar::path($filename));
+        } catch (Exception $e) {
+            unlink($temp_filename);
+            throw $e;
+        }
+        // @todo FIXME: Hardcoded chmod is lame, but seems to be necessary to
+        // keep from accidentally saving images from command-line (queues)
+        // that can't be read from web server, which causes hard-to-notice
+        // problems later on:
+        //
+        // http://status.net/open-source/issues/2663
+        chmod(Avatar::path($filename), 0644);
+
+        $profile->setOriginal($filename);
+
+        $orig = clone($profile);
+        $profile->avatar = $url;
+        $profile->update($orig);
+
+        return Avatar::getUploaded($profile);
     }
 
     /**

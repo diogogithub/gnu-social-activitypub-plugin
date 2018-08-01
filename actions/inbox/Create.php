@@ -84,7 +84,7 @@ if (isset($data->object->cc) && is_array($data->object->cc)) {
         try {
             $to_profiles = array_merge($to_profiles, $discovery->lookup($cc_url));
         } catch (Exception $e) {
-            // Invalid actor found, just let it go.
+            // Invalid actor found, just let it go. // TODO: Fallback to OStatus
         }
     }
 } elseif (empty($data->object->cc) || in_array($data->object->cc, $public_to)) {
@@ -93,7 +93,7 @@ if (isset($data->object->cc) && is_array($data->object->cc)) {
     try {
         $to_profiles = array_merge($to_profiles, $discovery->lookup($data->object->cc));
     } catch (Exception $e) {
-        // Invalid actor found, just let it go.
+        // Invalid actor found, just let it go. // TODO: Fallback to OStatus
     }
 }
 
