@@ -30,7 +30,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 // Validate Object
-if (!filter_var($data->object, FILTER_VALIDATE_URL)) {
+if (!filter_var($data['object'], FILTER_VALIDATE_URL)) {
     ActivityPubReturn::error('Invalid Object Actor URL.');
 }
 
@@ -38,7 +38,7 @@ if (!filter_var($data->object, FILTER_VALIDATE_URL)) {
 try {
     if (!isset($profile)) {
         $object_profile = new Activitypub_explorer;
-        $object_profile = $object_profile->lookup($data->object)[0];
+        $object_profile = $object_profile->lookup($data['object'])[0];
     } else {
         $object_profile = $profile;
         unset($profile);
@@ -52,14 +52,14 @@ $actor_aprofile = Activitypub_profile::from_profile($actor_profile);
 
 if (!Subscription::exists($actor_profile, $object_profile)) {
     Subscription::start($actor_profile, $object_profile);
-    common_debug('ActivityPubPlugin: Accepted Follow request from '.$data->actor.' to '.$data->object);
+    common_debug('ActivityPubPlugin: Accepted Follow request from '.$data['actor'].' to '.$data['object']);
 
     // Notify remote instance that we have accepted their request
-    common_debug('ActivityPubPlugin: Notifying remote instance that we have accepted their Follow request request from '.$data->actor.' to '.$data->object);
+    common_debug('ActivityPubPlugin: Notifying remote instance that we have accepted their Follow request request from '.$data['actor'].' to '.$data['object']);
     $postman = new Activitypub_postman($actor_profile, [$actor_aprofile]);
     $postman->follow();
     ActivityPubReturn::answer();
 } else {
-    common_debug('ActivityPubPlugin: Received a repeated Follow request from '.$data->actor.' to '.$data->object);
+    common_debug('ActivityPubPlugin: Received a repeated Follow request from '.$data['actor'].' to '.$data['object']);
     ActivityPubReturn::error('Already following.', 409);
 }

@@ -56,13 +56,11 @@ class Activitypub_explorer
     {
         $discovery = new Activitypub_explorer;
         // Get valid Actor object
-        try {
-            $actor_profile = $discovery->lookup($url);
+        $actor_profile = $discovery->lookup($url);
+        if (!empty($actor_profile)) {
             return $actor_profile[0];
-        } catch (Exception $e) {
-            throw new Exception('Invalid Actor.');
         }
-        unset($discovery);
+        throw new Exception('Invalid Actor.');
     }
 
     /**
@@ -168,10 +166,10 @@ class Activitypub_explorer
             common_debug('ActivityPub Explorer: Unable to find a local Aprofile for '.$uri.' - looking for a Profile instead.');
             // Well, maybe it is a pure blood?
             // Iff, we are in the same instance:
-            $ACTIVITYPUB_BASE_INSTANCE_URI_length = strlen(ACTIVITYPUB_BASE_INSTANCE_URI);
-            if (substr($uri, 0, $ACTIVITYPUB_BASE_INSTANCE_URI_length) == ACTIVITYPUB_BASE_INSTANCE_URI) {
+            $ACTIVITYPUB_BASE_ACTOR_URI_length = strlen(ACTIVITYPUB_BASE_ACTOR_URI);
+            if (substr($uri, 0, $ACTIVITYPUB_BASE_ACTOR_URI_length) == ACTIVITYPUB_BASE_ACTOR_URI) {
                 try {
-                    $profile = Profile::getByID(intval(substr($uri, $ACTIVITYPUB_BASE_INSTANCE_URI_length)));
+                    $profile = Profile::getByID(intval(substr($uri, $ACTIVITYPUB_BASE_ACTOR_URI_length)));
                     common_debug('ActivityPub Explorer: Found a Profile for '.$uri);
                     // We found something!
                     $this->discovered_actor_profiles[]= $profile;
@@ -215,7 +213,7 @@ class Activitypub_explorer
             $res = $this->temp_res;
             unset($this->temp_res);
         }
-        if (isset($res['type']) && $res['type'] === 'OrderedCollection' && isset ($res['first'])) { // It's a potential collection of actors!!!
+        if (isset($res['type']) && $res['type'] === 'OrderedCollection' && isset($res['first'])) { // It's a potential collection of actors!!!
             common_debug('ActivityPub Explorer: Found a collection of actors for '.$url);
             $this->travel_collection($res['first']);
             return true;
@@ -275,14 +273,17 @@ class Activitypub_explorer
      * Download and update given avatar image
      *
      * @author GNU Social
-     * @param string $url
-     * @return Avatar    The Avatar we have on disk. (seldom used)
+     * @param  Profile $profile
+     * @param  string $url
+     * @return Avatar    The Avatar we have on disk.
      * @throws Exception in various failure cases
      */
-    private function _store_avatar($profile, $url)
+    private function _store_avatar(Profile $profile, $url)
     {
-        if (!common_valid_http_url($url)) {
+        common_debug('ActivityPub Explorer: Started grabbing remote avatar from: '.$url);
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
             // TRANS: Server exception. %s is a URL.
+            common_debug('ActivityPub Explorer: Failed because it is an invalid url: '.$url);
             throw new ServerException(sprintf('Invalid avatar URL %s.'), $url);
         }
 
@@ -293,10 +294,12 @@ class Activitypub_explorer
             $imgData = HTTPClient::quickGet($url);
             // Make sure it's at least an image file. ImageFile can do the rest.
             if (false === getimagesizefromstring($imgData)) {
+                common_debug('ActivityPub Explorer: Failed because the downloaded avatar: '.$url. 'is not a validad image.');
                 throw new UnsupportedMediaException('Downloaded avatar was not an image.');
             }
             file_put_contents($temp_filename, $imgData);
             unset($imgData);    // No need to carry this in memory.
+            common_debug('ActivityPub Explorer: Stored dowloaded avatar in: '.$temp_filename);
 
             $id = $profile->getID();
 
@@ -308,7 +311,9 @@ class Activitypub_explorer
                 common_timestamp()
             );
             rename($temp_filename, Avatar::path($filename));
+            common_debug('ActivityPub Explorer: Moved avatar from: '.$temp_filename.' to '.$filename);
         } catch (Exception $e) {
+            common_debug('ActivityPub Explorer: Something went wrong while processing the avatar from: '.$url.' details: '.$e->getMessage());
             unlink($temp_filename);
             throw $e;
         }
@@ -326,6 +331,7 @@ class Activitypub_explorer
         $profile->avatar = $url;
         $profile->update($orig);
 
+        common_debug('ActivityPub Explorer: Seted Avatar from: '.$url.' to profile.');
         return Avatar::getUploaded($profile);
     }
 
@@ -416,8 +422,7 @@ class Activitypub_explorer
         $response  = $client->get($url, $headers);
         $res = json_decode($response->getBody(), true);
 
-        if (!isset($res['orderedItems']))
-        {
+        if (!isset($res['orderedItems'])) {
             return false;
         }
 

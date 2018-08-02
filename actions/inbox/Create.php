@@ -31,10 +31,10 @@ if (!defined('GNUSOCIAL')) {
 
 $valid_object_types = ['Note'];
 
-$res = $data->object;
+$res = $data['object'];
 
 try {
-    Activitypub_notice::validate_remote_notice((array) $res);
+    Activitypub_notice::validate_remote_notice($res);
 } catch (Exception $e) {
     common_debug('ActivityPub Inbox Create Note: Invalid note: '.$e->getMessage());
     ActivityPubReturn::error($e->getMessage());
@@ -42,23 +42,23 @@ try {
 
 $settings = [];
 
-if (isset($res->inReplyTo)) {
-    $settings['inReplyTo'] = $res->inReplyTo;
+if (isset($res['inReplyTo'])) {
+    $settings['inReplyTo'] = $res['inReplyTo'];
 }
-if (isset($res->latitude)) {
-    $settings['latitude'] = $res->latitude;
+if (isset($res['latitude'])) {
+    $settings['latitude']  = $res['latitude'];
 }
-if (isset($res->longitude)) {
-    $settings['longitude'] = $res->longitude;
+if (isset($res['longitude'])) {
+    $settings['longitude'] = $res['longitude'];
 }
 
 try {
     Activitypub_notice::create_notice(
         $actor_profile,
-        $res->id,
-        $res->url,
-        $res->content,
-        $res->cc,
+        $res['id'],
+        $res['url'],
+        $res['content'],
+        $res['cc'],
         $settings
     );
     ActivityPubReturn::answer();

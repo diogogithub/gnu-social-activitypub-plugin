@@ -30,18 +30,18 @@ if (!defined('GNUSOCIAL')) {
 }
 
 // Validate data
-if (!isset($data->type)) {
+if (!isset($data['type'])) {
     ActivityPubReturn::error('Type was not specified.');
 }
 
-switch ($data->object->type) {
+switch ($data['object']['type']) {
     case 'Like':
         try {
             // Validate data
-            if (!isset($data->object->object)) {
+            if (!isset($data['object']['object'])) {
                 ActivityPubReturn::error('Notice URI was not specified.');
             }
-            Fave::removeEntry($actor_profile, ActivityPubPlugin::grab_notice_from_url($data->object->object));
+            Fave::removeEntry($actor_profile, ActivityPubPlugin::grab_notice_from_url($data['object']['object']));
             // Notice disfavorited successfully.
             ActivityPubReturn::answer();
         } catch (Exception $e) {
@@ -50,13 +50,13 @@ switch ($data->object->type) {
         break;
     case 'Follow':
         // Validate data
-        if (!isset($data->object->object)) {
+        if (!isset($data['object']['object'])) {
             ActivityPubReturn::error('Object Actor URL was not specified.');
         }
         // Get valid Object profile
         try {
             $object_profile = new Activitypub_explorer;
-            $object_profile = $object_profile->lookup($data->object->object)[0];
+            $object_profile = $object_profile->lookup($data['object']['object'])[0];
         } catch (Exception $e) {
             ActivityPubReturn::error('Invalid Object Actor URL.', 404);
         }

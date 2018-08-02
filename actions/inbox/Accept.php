@@ -30,20 +30,20 @@ if (!defined('GNUSOCIAL')) {
 }
 
 // Validate data
-if (!isset($data->type)) {
+if (!isset($data['object']['type'])) {
     ActivityPubReturn::error("Type was not specified.");
 }
 
-switch ($data->object->type) {
-case "Follow":
+switch ($data['object']['type']) {
+    case "Follow":
         // Validate data
-        if (!isset($data->object->object)) {
+        if (!isset($data['object']['object'])) {
             ActivityPubReturn::error("Object Actor URL was not specified.");
         }
         // Get valid Object profile
         try {
             $object_profile = new Activitypub_explorer;
-            $object_profile = $object_profile->lookup($data->object->object)[0];
+            $object_profile = $object_profile->lookup($data['object']['object'])[0];
         } catch (Exception $e) {
             ActivityPubReturn::error("Invalid Object Actor URL.", 404);
         }
@@ -52,7 +52,7 @@ case "Follow":
         $pending_list->remove();
         ActivityPubReturn::answer(); // You are now being followed by this person.
         break;
-default:
+    default:
         ActivityPubReturn::error("Invalid object type.");
         break;
 }

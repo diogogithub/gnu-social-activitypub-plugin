@@ -39,7 +39,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "ex
 require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "postman.php";
 
 // So that this isn't hardcoded everywhere
-define('ACTIVITYPUB_BASE_INSTANCE_URI', common_root_url().'index.php/user/');
+define('ACTIVITYPUB_BASE_ACTOR_URI', common_root_url().'index.php/user/');
 const ACTIVITYPUB_PUBLIC_TO = ['https://www.w3.org/ns/activitystreams#Public',
                                'Public',
                                'as:Public'
@@ -65,7 +65,7 @@ class ActivityPubPlugin extends Plugin
     public static function actor_uri($profile)
     {
         if ($profile->isLocal()) {
-            return ACTIVITYPUB_BASE_INSTANCE_URI.$profile->getID();
+            return ACTIVITYPUB_BASE_ACTOR_URI.$profile->getID();
         } else {
             return $profile->getUri();
         }
@@ -254,7 +254,7 @@ class ActivityPubPlugin extends Plugin
 
         $out->elementStart('dl', 'entity_tags activitypub_profile');
         $out->element('dt', null, _m('ActivityPub'));
-        $out->element('dd', null, _m('Active'));
+        $out->element('dd', null, _m('Remote Profile'));
         $out->elementEnd('dl');
     }
 
@@ -513,7 +513,7 @@ class ActivityPubPlugin extends Plugin
      * @param string $uri in/out
      * @return mixed hook return code
      */
-    public function onStartGetProfileUri($profile, &$uri)
+    public function onStartGetProfileUri(Profile $profile, &$uri)
     {
         $aprofile = Activitypub_profile::getKV('profile_id', $profile->id);
         if ($aprofile instanceof Activitypub_profile) {
@@ -952,10 +952,16 @@ class ActivityPubReturn
      * @param array $mimeTypes Supported Types
      * @return array|null of supported mime types sorted | null if none valid
      */
-    public static function getBestSupportedMimeType($mimeTypes = null)
+    public static function getBestSupportedMimeType($mimeTypes)
     {
+        // XXX: This function needs improvement!
         if (!isset($_SERVER['HTTP_ACCEPT'])) {
             return null;
+        }
+
+        // This mime type was messing everything, thus the special case
+        if ($_SERVER['HTTP_ACCEPT'] == 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"') {
+            return true;
         }
 
         // Values will be stored in this array
@@ -970,7 +976,7 @@ class ActivityPubReturn
             $q = 1;
             // check if there is a different quality
             if (strpos($a, ';q=')) {
-                // divide "mime/type;q=X" into two parts: "mime/type" i "X"
+                // divide "mime/type;q=X" into two parts: "mime/type" and "X"
                 list($a, $q) = explode(';q=', $a);
             }
             // mime-type $a is accepted with the quality $q
@@ -979,12 +985,7 @@ class ActivityPubReturn
         }
         arsort($AcceptTypes);
 
-        // if no parameter was passed, just return parsed data
-        if (!$mimeTypes) {
-            return $AcceptTypes;
-        }
-
-        $mimeTypes = array_map('strtolower', (array)$mimeTypes);
+        $mimeTypes = array_map('strtolower', $mimeTypes);
 
         // let’s check our supported types:
         foreach ($AcceptTypes as $mime => $q) {
@@ -992,6 +993,7 @@ class ActivityPubReturn
                 return $mime;
             }
         }
+
         // no mime-type found
         return null;
     }

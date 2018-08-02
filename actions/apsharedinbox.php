@@ -58,36 +58,30 @@ class apSharedInboxAction extends ManagedAction
         common_debug('ActivityPub Shared Inbox: Received a POST request.');
         $data = file_get_contents('php://input');
         common_debug('ActivityPub Shared Inbox: Request contents: '.$data);
-        $data = json_decode(file_get_contents('php://input'));
+        $data = json_decode(file_get_contents('php://input'), true);
 
         // Validate data
-        if (!isset($data->type)) {
+        if (!isset($data['type'])) {
             ActivityPubReturn::error('Type was not specified.');
         }
-        if (!isset($data->actor)) {
+        if (!isset($data['actor'])) {
             ActivityPubReturn::error('Actor was not specified.');
         }
-        if (!isset($data->object)) {
+        if (!isset($data['object'])) {
             ActivityPubReturn::error('Object was not specified.');
         }
 
         // Get valid Actor object
         try {
-            $actor_profile = ActivityPub_explorer::get_profile_from_url($data->actor);
+            $actor_profile = ActivityPub_explorer::get_profile_from_url($data['actor']);
         } catch (Exception $e) {
             ActivityPubReturn::error($e->getMessage(), 404);
         }
 
-        // Public To:
-        $public_to = ['https://www.w3.org/ns/activitystreams#Public',
-                      'Public',
-                      'as:Public'
-                     ];
-
-        $to_profiles = ['https://www.w3.org/ns/activitystreams#Public'];
+        $to_profiles = [];
 
         // Process request
-        switch ($data->type) {
+        switch ($data['type']) {
             // Data available:
             // Profile       $actor_profile
             // string|object $data->object

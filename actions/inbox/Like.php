@@ -31,7 +31,7 @@ if (!defined('GNUSOCIAL')) {
 
 try {
     try {
-        $object_notice = ActivityPubPlugin::grab_notice_from_url($data->object);
+        $object_notice = ActivityPubPlugin::grab_notice_from_url($data['object']);
     } catch (Exception $e) {
         ActivityPubReturn::error('Invalid Object specified.');
     }

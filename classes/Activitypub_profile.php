@@ -318,11 +318,9 @@ class Activitypub_profile extends Managed_DataObject
      */
     public static function fromUri($url)
     {
-        $explorer = new Activitypub_explorer();
-        $profiles_found = $explorer->lookup($url);
-        if (!empty($profiles_found)) {
-            return self::from_profile($profiles_found[0]);
-        } else {
+        try {
+            return self::from_profile(Activitypub_explorer::get_profile_from_url($url));
+        } catch (Exception $e) {
             throw new Exception('No valid ActivityPub profile found for given URI.');
         }
     }
