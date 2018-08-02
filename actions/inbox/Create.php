@@ -54,8 +54,8 @@ if (isset($res->longitude)) {
 
 try {
     Activitypub_notice::create_notice(
-            ActivityPub_explorer::get_profile_from_url($res->atributtedTo),
-            $res->id,
+        ActivityPub_explorer::get_profile_from_url($data->actor),
+        $res->id,
         $res->url,
         $res->content,
         $res->cc,

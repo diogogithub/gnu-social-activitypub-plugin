@@ -109,7 +109,7 @@ class ActivityPubPlugin extends Plugin
                     common_debug('ActivityPubPlugin Notice Grabber: '.$candidate->getUrl(). ' is different of '.$url);
                 }
             } catch (Exception $e) {
-                common_debug('ActivityPubPlugin Notice Grabber failed to find: '.$url. 'offline.');
+                common_debug('ActivityPubPlugin Notice Grabber: failed to find: '.$url. 'offline.');
             }
         }
 
@@ -124,7 +124,7 @@ class ActivityPubPlugin extends Plugin
         try {
             Activitypub_notice::validate_remote_notice($res);
         } catch (Exception $e) {
-            common_debug('ActivityPub Explorer: Invalid potential remote notice while processing id: '.$url. '. He returned the following: '.json_encode($res, JSON_UNESCAPED_SLASHES));
+            common_debug('ActivityPubPlugin Notice Grabber: Invalid potential remote notice while processing id: '.$url. '. He returned the following: '.json_encode($res, JSON_UNESCAPED_SLASHES));
             throw $e;
         }
 
@@ -147,7 +147,7 @@ class ActivityPubPlugin extends Plugin
                 $settings
             );
         } catch (Exception $e) {
-            common_debug('ActivityPubPlugin Notice Grabber failed to find: '.$url. 'online.');
+            common_debug('ActivityPubPlugin Notice Grabber: failed to find: '.$url. 'online.');
             throw $e;
         }
 
