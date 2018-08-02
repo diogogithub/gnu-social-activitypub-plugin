@@ -109,7 +109,7 @@ class ActivityPubPlugin extends Plugin
                     common_debug('ActivityPubPlugin Notice Grabber: '.$candidate->getUrl(). ' is different of '.$url);
                 }
             } catch (Exception $e) {
-                common_debug('ActivityPubPlugin Notice Grabber: failed to find: '.$url. 'offline.');
+                common_debug('ActivityPubPlugin Notice Grabber: failed to find: '.$url.' offline.');
             }
         }
 
@@ -147,7 +147,7 @@ class ActivityPubPlugin extends Plugin
                 $settings
             );
         } catch (Exception $e) {
-            common_debug('ActivityPubPlugin Notice Grabber: failed to find: '.$url. 'online.');
+            common_debug('ActivityPubPlugin Notice Grabber: failed to find: '.$url.' online.');
             throw $e;
         }
 
