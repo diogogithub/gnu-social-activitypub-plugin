@@ -193,7 +193,7 @@ class Activitypub_notice extends Managed_DataObject
         try {
             return Notice::saveActivity($act, $actor_profile, $options);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw $e;
         }
     }
 

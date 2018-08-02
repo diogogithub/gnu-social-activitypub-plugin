@@ -62,6 +62,10 @@ try {
         $settings
     );
     ActivityPubReturn::answer();
+} catch (AlreadyFulfilledException $e) {
+    // Notice URI already exists
+    common_debug('ActivityPub Inbox Create Note: Note already exists: '.$e->getMessage());
+    ActivityPubReturn::answer();
 } catch (Exception $e) {
     common_debug('ActivityPub Inbox Create Note: Failed Create Note: '.$e->getMessage());
     ActivityPubReturn::error($e->getMessage());

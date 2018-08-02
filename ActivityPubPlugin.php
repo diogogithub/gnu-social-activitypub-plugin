@@ -33,10 +33,10 @@ if (!defined('GNUSOCIAL')) {
 date_default_timezone_set('UTC');
 
 // Import required files by the plugin
-require __DIR__.'/vendor/autoload.php';
-require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "discoveryhints.php";
-require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "explorer.php";
-require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "postman.php";
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'discoveryhints.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'explorer.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'postman.php';
 
 // So that this isn't hardcoded everywhere
 define('ACTIVITYPUB_BASE_ACTOR_URI', common_root_url().'index.php/user/');
