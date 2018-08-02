@@ -96,11 +96,11 @@ class ActivityPubPlugin extends Plugin
     {
         /* Offline Grabbing */
         try {
-            // Look for a know remote notice
+            // Look for a known remote notice
             return Notice::getByUri($url);
         } catch (Exception $e) {
             // Look for a local notice (unfortunately GNU Social doesn't
-            // provide this functionality)
+            // provide this functionality natively)
             try {
                 $candidate = Notice::getByID(intval(substr($url, strlen(common_local_url('shownotice', ['notice' => ''])))));
                 if ($candidate->getUrl() == $url) { // Sanity check
@@ -119,7 +119,7 @@ class ActivityPubPlugin extends Plugin
         $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
         $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
         $response  = $client->get($url, $headers);
-        $res = json_decode($response->getBody());
+        $res = json_decode($response->getBody(), true);
         $settings = [];
         try {
             Activitypub_notice::validate_remote_notice($res);

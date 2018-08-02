@@ -121,7 +121,7 @@ class Activitypub_explorer
         $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
         $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
         $response  = $client->get($url, $headers);
-        $res = json_decode($response->getBody(), JSON_UNESCAPED_SLASHES);
+        $res = json_decode($response->getBody(), true);
         if (self::validate_remote_response($res)) {
             $this->temp_res = $res;
             return true;
@@ -210,7 +210,7 @@ class Activitypub_explorer
             $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
             $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
             $response  = $client->get($url, $headers);
-            $res = json_decode($response->getBody(), JSON_UNESCAPED_SLASHES);
+            $res = json_decode($response->getBody(), true);
         } else {
             $res = $this->temp_res;
             unset($this->temp_res);
@@ -219,7 +219,7 @@ class Activitypub_explorer
             common_debug('ActivityPub Explorer: Found a collection of actors for '.$url);
             foreach ($res["orderedItems"] as $profile) {
                 if ($this->_lookup($profile) == false) {
-                    common_debug('ActivityPub Explorer: Found an inavlid actor for '.$profile);
+                    common_debug('ActivityPub Explorer: Found an invalid actor for '.$profile);
                     // TODO: Invalid actor found, fallback to OStatus
                 }
             }
@@ -393,7 +393,7 @@ class Activitypub_explorer
         if (!$response->isOk()) {
             throw new Exception('Invalid Actor URL.');
         }
-        $res = json_decode($response->getBody(), JSON_UNESCAPED_SLASHES);
+        $res = json_decode($response->getBody(), true);
         if (self::validate_remote_response($res)) {
             return [
                 'inbox' => $res['inbox'],
