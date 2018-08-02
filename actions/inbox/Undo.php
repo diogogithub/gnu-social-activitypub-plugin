@@ -41,7 +41,7 @@ switch ($data->object->type) {
             if (!isset($data->object->object)) {
                 ActivityPubReturn::error('Notice URI was not specified.');
             }
-            Fave::removeEntry($actor_profile, ActivityPubPlugin::get_local_notice_from_url($data->object->object));
+            Fave::removeEntry($actor_profile, ActivityPubPlugin::grab_notice_from_url($data->object->object));
             // Notice disfavorited successfully.
             ActivityPubReturn::answer();
         } catch (Exception $e) {
@@ -73,6 +73,7 @@ switch ($data->object->type) {
     case 'Announce':
         // This is a dummy entry point as GNU Social doesn't allow Undo Announce
         ActivityPubReturn::answer();
+        // no break
     default:
         ActivityPubReturn::error('Invalid object type.');
         break;

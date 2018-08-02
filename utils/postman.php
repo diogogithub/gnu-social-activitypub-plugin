@@ -227,7 +227,7 @@ class Activitypub_postman
     {
         $data = Activitypub_announce::announce_to_array(
                          ActivityPubPlugin::actor_uri($this->actor),
-                         Activitypub_notice::notice_to_array($notice)
+                         $notice->getUri()
                         );
         $data = json_encode($data, JSON_UNESCAPED_SLASHES);
 

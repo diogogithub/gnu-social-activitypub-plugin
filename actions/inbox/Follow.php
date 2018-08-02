@@ -36,12 +36,12 @@ if (!filter_var($data->object, FILTER_VALIDATE_URL)) {
 
 // Ensure valid Object profile
 try {
-    if (!isset ($profile)) {
+    if (!isset($profile)) {
         $object_profile = new Activitypub_explorer;
         $object_profile = $object_profile->lookup($data->object)[0];
     } else {
         $object_profile = $profile;
-        unset ($profile);
+        unset($profile);
     }
 } catch (Exception $e) {
     ActivityPubReturn::error('Invalid Object Actor URL.', 404);

@@ -52,7 +52,7 @@ class Activitypub_create extends Managed_DataObject
     {
         $res = [
             '@context' => 'https://www.w3.org/ns/activitystreams',
-            'id'     => $id,
+            'id'     => $id.'/create',
             'type'   => 'Create',
             'to'     => $object['to'],
             'cc'     => $object['cc'],

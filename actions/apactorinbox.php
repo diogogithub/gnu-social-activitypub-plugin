@@ -81,15 +81,12 @@ class apActorInboxAction extends ManagedAction
             ActivityPubReturn::error('Object was not specified.');
         }
 
-        $discovery = new Activitypub_explorer;
         // Get valid Actor object
         try {
-            $actor_profile = $discovery->lookup($data->actor);
-            $actor_profile = $actor_profile[0];
+            $actor_profile = ActivityPub_explorer::get_profile_from_url($data->actor);
         } catch (Exception $e) {
-            ActivityPubReturn::error('Invalid Actor.', 404);
+            ActivityPubReturn::error($e->getMessage(), 404);
         }
-        unset($discovery);
 
         // Public To:
         $public_to = ['https://www.w3.org/ns/activitystreams#Public',

@@ -39,7 +39,11 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "ex
 require_once __DIR__ . DIRECTORY_SEPARATOR . "utils" . DIRECTORY_SEPARATOR . "postman.php";
 
 // So that this isn't hardcoded everywhere
-define('ACTIVITYPUB_BASE_INSTANCE_URI', common_root_url()."index.php/user/");
+define('ACTIVITYPUB_BASE_INSTANCE_URI', common_root_url().'index.php/user/');
+const ACTIVITYPUB_PUBLIC_TO = ['https://www.w3.org/ns/activitystreams#Public',
+                               'Public',
+                               'as:Public'
+                              ];
 
 /**
  * @category  Plugin
@@ -81,32 +85,74 @@ class ActivityPubPlugin extends Plugin
     }
 
     /**
-     * Returns a notice from its URL since GNU Social doesn't provide
-     * this functionality
+     * Returns a notice from its URL.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param string $url Notice's URL
      * @return Notice The Notice object
      * @throws Exception This function or provides a Notice or fails with exception
      */
-    public static function get_local_notice_from_url($url)
+    public static function grab_notice_from_url($url)
     {
+        /* Offline Grabbing */
         try {
+            // Look for a know remote notice
             return Notice::getByUri($url);
         } catch (Exception $e) {
+            // Look for a local notice (unfortunately GNU Social doesn't
+            // provide this functionality)
             try {
                 $candidate = Notice::getByID(intval(substr($url, strlen(common_local_url('shownotice', ['notice' => ''])))));
                 if ($candidate->getUrl() == $url) { // Sanity check
                     return $candidate;
                 } else {
-                    common_debug ('ActivityPubPlugin Notice Grabber: '.$candidate->getUrl(). ' is different of '.$url);
-                    throw new Exception('Notice not found.');
+                    common_debug('ActivityPubPlugin Notice Grabber: '.$candidate->getUrl(). ' is different of '.$url);
                 }
             } catch (Exception $e) {
-                common_debug ('ActivityPubPlugin Notice Grabber failed to find: '.$url);
-                throw new Exception('Notice not found.');
+                common_debug('ActivityPubPlugin Notice Grabber failed to find: '.$url. 'offline.');
             }
         }
+
+        /* Online Grabbing */
+        $client    = new HTTPClient();
+        $headers   = [];
+        $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
+        $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
+        $response  = $client->get($url, $headers);
+        $res = json_decode($response->getBody(), JSON_UNESCAPED_SLASHES);
+        $settings = [];
+        try {
+            Activitypub_notice::validate_remote_notice($res);
+        } catch (Exception $e) {
+            common_debug('ActivityPub Explorer: Invalid potential remote notice while processing id: '.$url. '. He returned the following: '.json_encode($res, JSON_UNESCAPED_SLASHES));
+            throw $e;
+        }
+
+        if (isset($res->inReplyTo)) {
+            $settings['inReplyTo'] = $res->inReplyTo;
+        }
+        if (isset($res->latitude)) {
+            $settings['latitude'] = $res->latitude;
+        }
+        if (isset($res->longitude)) {
+            $settings['longitude'] = $res->longitude;
+        }
+        try {
+            return Activitypub_notice::create_notice(
+                    ActivityPub_explorer::get_profile_from_url($res->atributtedTo),
+                    $res->id,
+                $res->url,
+                $res->content,
+                $res->cc,
+                $settings
+            );
+        } catch (Exception $e) {
+            common_debug('ActivityPubPlugin Notice Grabber failed to find: '.$url. 'online.');
+            throw $e;
+        }
+
+        // When all the above failed in its quest of grabbing the Notice
+        throw new Exception('Notice not found.');
     }
 
     /**

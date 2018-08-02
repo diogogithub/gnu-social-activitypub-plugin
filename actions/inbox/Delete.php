@@ -30,7 +30,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 try {
-    $notice = ActivityPubPlugin::get_local_notice_from_url($data->object->id);
+    $notice = ActivityPubPlugin::grab_notice_from_url($data->object->id);
     $notice->deleteAs($actor_profile);
     ActivityPubReturn::answer();
 } catch (Exception $e) {

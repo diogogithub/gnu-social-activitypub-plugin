@@ -42,7 +42,28 @@ if (!defined('GNUSOCIAL')) {
  */
 class Activitypub_explorer
 {
-    private $discovered_actor_profiles = array();
+    private $discovered_actor_profiles = [];
+
+    /**
+     * Shortcut function to get a single profile from its URL.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param string $url
+     * @return Profile
+     * @throws Exception
+     */
+    public static function get_profile_from_url($url)
+    {
+        $discovery = new Activitypub_explorer;
+        // Get valid Actor object
+        try {
+            $actor_profile = $discovery->lookup($url);
+            return $actor_profile[0];
+        } catch (Exception $e) {
+            throw new Exception('Invalid Actor.');
+        }
+        unset($discovery);
+    }
 
     /**
      * Get every profile from the given URL
@@ -55,8 +76,12 @@ class Activitypub_explorer
      */
     public function lookup($url)
     {
+        if (in_array($url, ACTIVITYPUB_PUBLIC_TO)) {
+            return [];
+        }
+
         common_debug('ActivityPub Explorer: Started now looking for '.$url);
-        $this->discovered_actor_profiles = array();
+        $this->discovered_actor_profiles = [];
 
         return $this->_lookup($url);
     }
@@ -195,7 +220,7 @@ class Activitypub_explorer
             foreach ($res["orderedItems"] as $profile) {
                 if ($this->_lookup($profile) == false) {
                     common_debug('ActivityPub Explorer: Found an inavlid actor for '.$profile);
-                    // XXX: Invalid actor found, not sure how we handle those
+                    // TODO: Invalid actor found, fallback to OStatus
                 }
             }
             // Go through entire collection
@@ -211,6 +236,7 @@ class Activitypub_explorer
             common_debug('ActivityPub Explorer: Invalid potential remote actor while grabbing remotely: '.$url. '. He returned the following: '.json_encode($res, JSON_UNESCAPED_SLASHES));
         }
 
+        // TODO: Fallback to OStatus
         return false;
     }
 
@@ -279,10 +305,12 @@ class Activitypub_explorer
             $id = $profile->getID();
 
             $imagefile = new ImageFile(null, $temp_filename);
-            $filename = Avatar::filename($id,
+            $filename = Avatar::filename(
+                $id,
                                          image_type_to_extension($imagefile->type),
                                          null,
-                                         common_timestamp());
+                                         common_timestamp()
+            );
             rename($temp_filename, Avatar::path($filename));
         } catch (Exception $e) {
             unlink($temp_filename);

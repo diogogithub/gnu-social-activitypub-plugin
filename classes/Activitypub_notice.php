@@ -105,4 +105,127 @@ class Activitypub_notice extends Managed_DataObject
 
         return $item;
     }
+
+    /**
+     * Create a Notice via ActivityPub data.
+     * Returns created Notice.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param Profile $actor_profile
+     * @param int32 $id
+     * @param string $url
+     * @param string $content
+     * @param array|string $cc
+     * @param array $settings possible keys: ['inReplyTo', 'latitude', 'longitude']
+     * @return Notice
+     * @throws Exception
+     */
+    public static function create_notice($actor_profile, $id, $url, $content, $cc, $settings)
+    {
+        $act = new Activity();
+        $act->verb = ActivityVerb::POST;
+        $act->time = time();
+        $act->actor = $actor_profile->asActivityObject();
+
+        $act->context = new ActivityContext();
+
+        // Is this a reply?
+        if (isset($settings['inReplyTo'])) {
+            try {
+                $inReplyTo = ActivityPubPlugin::grab_notice_from_url($settings['inReplyTo']);
+            } catch (Exception $e) {
+                throw new Exception('Invalid Object inReplyTo value.');
+            }
+            $act->context->replyToID  = $inReplyTo->getUri();
+            $act->context->replyToUrl = $inReplyTo->getUrl();
+        } else {
+            $inReplyTo = null;
+        }
+
+        $discovery = new Activitypub_explorer;
+
+        // Generate Cc objects
+        if (is_array($cc)) {
+            // Remove duplicates from Cc actors set
+            array_unique($cc);
+            foreach ($cc as $cc_url) {
+                try {
+                    $cc_profiles = array_merge($cc_profiles, $discovery->lookup($cc_url));
+                } catch (Exception $e) {
+                    // Invalid actor found, just let it go. // TODO: Fallback to OStatus
+                }
+            }
+        } elseif (empty($cc) || in_array($cc, ACTIVITYPUB_PUBLIC_TO)) {
+            // No need to do anything else at this point, let's just break out the if
+        } else {
+            try {
+                $cc_profiles = array_merge($cc_profiles, $discovery->lookup($cc));
+            } catch (Exception $e) {
+                // Invalid actor found, just let it go. // TODO: Fallback to OStatus
+            }
+        }
+
+        unset($discovery);
+
+        foreach ($cc_profiles as $tp) {
+            $act->context->attention[ActivityPubPlugin::actor_uri($tp)] = 'http://activitystrea.ms/schema/1.0/person';
+        }
+
+        // Add location if that is set
+        if (isset($settings['latitude'], $settings['longitude'])) {
+            $act->context->location = Location::fromLatLon($settings['latitude'], $settings['longitude']);
+        }
+
+        // Reject notice if it is too long (without the HTML)
+        if (Notice::contentTooLong($content)) {
+            throw new Exception('That\'s too long. Maximum notice size is %d character.');
+        }
+
+        $options = ['source' => 'ActivityPub', 'uri' => $id, 'url' => $url];
+
+        $actobj = new ActivityObject();
+        $actobj->type = ActivityObject::NOTE;
+        $actobj->content = strip_tags($content, '<p><b><i><u><a><ul><ol><li>');
+
+        // Finally add the activity object to our activity
+        $act->objects[] = $actobj;
+
+        try {
+            return Notice::saveActivity($act, $actor_profile, $options);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    /**
+     * Validates a remote notice.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param Object $data
+     * @return boolean true in case of success
+     * @throws Exception
+     */
+    public static function validate_remote_notice($data)
+    {
+        if (!isset($data->id)) {
+            throw new Exception('Object ID not specified.');
+        } elseif (!filter_var($data->id, FILTER_VALIDATE_URL)) {
+            throw new Exception('Invalid Object ID.');
+        }
+        if ($data->type !== 'Note') {
+            throw new Exception('Invalid Object type.');
+        }
+        if (!isset($data->content)) {
+            throw new Exception('Object content was not specified.');
+        }
+        if (!isset($data->url)) {
+            throw new Exception('Object url was not specified.');
+        } elseif (!filter_var($data->url, FILTER_VALIDATE_URL)) {
+            throw new Exception('Invalid Object URL.');
+        }
+        if (!isset($data->to)) {
+            throw new Exception('Object To was not specified.');
+        }
+        return true;
+    }
 }
