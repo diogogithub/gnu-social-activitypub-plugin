@@ -60,7 +60,7 @@ class Activitypub_explorer
             $actor_profile = $discovery->lookup($url);
             return $actor_profile[0];
         } catch (Exception $e) {
-            throw new Exception('Invalid Actor: '.$e->getMessage());
+            throw new Exception('Invalid Actor: '.$url);
         }
         unset($discovery);
     }
