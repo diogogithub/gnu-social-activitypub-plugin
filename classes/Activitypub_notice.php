@@ -134,7 +134,7 @@ class Activitypub_notice extends Managed_DataObject
             try {
                 $inReplyTo = ActivityPubPlugin::grab_notice_from_url($settings['inReplyTo']);
             } catch (Exception $e) {
-                throw new Exception('Invalid Object inReplyTo value: '.$e->getMessage());
+                throw new Exception('Invalid Object inReplyTo value.');
             }
             $act->context->replyToID  = $inReplyTo->getUri();
             $act->context->replyToUrl = $inReplyTo->getUrl();
@@ -201,38 +201,38 @@ class Activitypub_notice extends Managed_DataObject
      * Validates a remote notice.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
-     * @param  Object $data
+     * @param  StdClass $data
      * @return boolean true in case of success
      * @throws Exception
      */
     public static function validate_remote_notice($data)
     {
-        if (empty($data->attributedTo)) {
+        if (!isset($data->attributedTo)) {
             common_debug('ActivityPub Notice Validator: Rejected because attributedTo was not specified.');
             throw new Exception('No attributedTo specified.');
         }
-        if (empty($data->id)) {
+        if (!isset($data->id)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object ID was not specified.');
             throw new Exception('Object ID not specified.');
         } elseif (!filter_var($data->id, FILTER_VALIDATE_URL)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object ID is invalid.');
             throw new Exception('Invalid Object ID.');
         }
-        if (empty($data->type) || $data->type !== 'Note') {
+        if (!isset($data->type) || $data->type !== 'Note') {
             common_debug('ActivityPub Notice Validator: Rejected because of Type.');
             throw new Exception('Invalid Object type.');
         }
-        if (empty($data->content)) {
+        if (!isset($data->content)) {
             common_debug('ActivityPub Notice Validator: Rejected because Content was not specified.');
             throw new Exception('Object content was not specified.');
         }
-        if (empty($data->url)) {
+        if (!isset($data->url)) {
             throw new Exception('Object URL was not specified.');
         } elseif (!filter_var($data->url, FILTER_VALIDATE_URL)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object URL is invalid.');
             throw new Exception('Invalid Object URL.');
         }
-        if (empty($data->cc)) {
+        if (!isset($data->cc)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object CC was not specified.');
             throw new Exception('Object CC was not specified.');
         }

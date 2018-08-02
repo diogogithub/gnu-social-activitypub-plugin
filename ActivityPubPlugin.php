@@ -119,7 +119,7 @@ class ActivityPubPlugin extends Plugin
         $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
         $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
         $response  = $client->get($url, $headers);
-        $res = json_decode($response->getBody(), JSON_UNESCAPED_SLASHES);
+        $res = json_decode($response->getBody());
         $settings = [];
         try {
             Activitypub_notice::validate_remote_notice($res);
