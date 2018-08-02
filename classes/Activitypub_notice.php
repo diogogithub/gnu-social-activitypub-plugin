@@ -201,11 +201,11 @@ class Activitypub_notice extends Managed_DataObject
      * Validates a remote notice.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
-     * @param Array $data
+     * @param StdClass $data
      * @return boolean true in case of success
      * @throws Exception
      */
-    public static function validate_remote_notice($data)
+    public static function validate_remote_notice(&$data)
     {
         if (!isset($data->attributedTo)) {
             common_debug('ActivityPub Notice Validator: Rejected because attributedTo was not specified.');
