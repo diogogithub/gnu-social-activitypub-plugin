@@ -207,32 +207,32 @@ class Activitypub_notice extends Managed_DataObject
      */
     public static function validate_remote_notice($data)
     {
-        if (!isset($data['attributedTo'])) {
+        if (!isset($data->attributedTo)) {
             common_debug('ActivityPub Notice Validator: Rejected because attributedTo was not specified.');
             throw new Exception('No attributedTo specified.');
         }
-        if (!isset($data['id'])) {
+        if (!isset($data->id)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object ID was not specified.');
             throw new Exception('Object ID not specified.');
-        } elseif (!filter_var($data['id'], FILTER_VALIDATE_URL)) {
+        } elseif (!filter_var($data->id, FILTER_VALIDATE_URL)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object ID is invalid.');
             throw new Exception('Invalid Object ID.');
         }
-        if (!isset($data['type']) || $data['type'] !== 'Note') {
+        if (!isset($data->type) || $data->type !== 'Note') {
             common_debug('ActivityPub Notice Validator: Rejected because of Type.');
             throw new Exception('Invalid Object type.');
         }
-        if (!isset($data['content'])) {
+        if (!isset($data->content)) {
             common_debug('ActivityPub Notice Validator: Rejected because Content was not specified.');
             throw new Exception('Object content was not specified.');
         }
-        if (!isset($data['url'])) {
+        if (!isset($data->url)) {
             throw new Exception('Object URL was not specified.');
-        } elseif (!filter_var($data['url'], FILTER_VALIDATE_URL)) {
+        } elseif (!filter_var($data->url, FILTER_VALIDATE_URL)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object URL is invalid.');
             throw new Exception('Invalid Object URL.');
         }
-        if (!isset($data['cc'])) {
+        if (!isset($data->cc)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object CC was not specified.');
             throw new Exception('Object CC was not specified.');
         }
