@@ -53,7 +53,7 @@ class apActorFollowersAction extends ManagedAction
     {
         try {
             $profile = Profile::getByID($this->trimmed('id'));
-            $url     = ActivityPubPlugin::actor_url($profile);
+            $profile_id = $profile->getID();
         } catch (Exception $e) {
             ActivityPubReturn::error('Invalid Actor URI.', 404);
         }
@@ -63,12 +63,12 @@ class apActorFollowersAction extends ManagedAction
         }
 
         if (!isset($_GET["page"])) {
-            $page = 1;
+            $page = 0;
         } else {
             $page = intval($this->trimmed('page'));
         }
 
-        if ($page <= 0) {
+        if ($page < 0) {
             ActivityPubReturn::error('Invalid page number.');
         }
 
@@ -77,22 +77,14 @@ class apActorFollowersAction extends ManagedAction
 
         /* Fetch Followers */
         try {
-            $sub   = $profile->getSubscribers($since, $limit);
+            $sub = $profile->getSubscribers($since, $limit);
         } catch (NoResultException $e) {
-            ActivityPubReturn::error('This user has no followers.');
+            // Just let the exception go on its merry way
         }
 
         /* Calculate total items */
         $total_subs  = $profile->subscriberCount();
         $total_pages = ceil($total_subs / PROFILES_PER_MINILIST);
-
-        if ($total_pages == 0) {
-            ActivityPubReturn::error('This user has no followers.');
-        }
-
-        if ($page > $total_pages) {
-            ActivityPubReturn::error("There are only {$total_pages} pages.");
-        }
 
         /* Get followers' URLs */
         $subs = array();
@@ -101,17 +93,29 @@ class apActorFollowersAction extends ManagedAction
         }
 
         $res = [
-                  '@context'     => [
-                    "https://www.w3.org/ns/activitystreams",
-                    "https://w3id.org/security/v1",
-                  ],
-                  'id'           => "{$url}/followers.json",
-                  'type'         => ($page == 0 ? 'OrderedCollection' : 'OrderedCollectionPage'),
-                  'totalItems'   => $total_subs,
-                  'next'         => $page+1 > $total_pages ? null : "{$url}/followers.json?page=".($page+1 == 1 ? 2 : $page+1),
-                  'prev'         => $page == 1 ? null : "{$url}/followers.json?page=".($page-1 <= 0 ? 1 : $page-1),
-                  'orderedItems' => $subs
-                ];
+            '@context'     => [
+              "https://www.w3.org/ns/activitystreams",
+              "https://w3id.org/security/v1",
+            ],
+            'id'           => common_local_url('apActorFollowers', ['id' => $profile_id]).(($page != 0) ? '?page='.$page : ''),
+            'type'         => ($page == 0 ? 'OrderedCollection' : 'OrderedCollectionPage'),
+            'totalItems'   => $total_subs,
+            'orderedItems' => $subs
+        ];
+
+        if ($page == 0) {
+            $res['first'] = common_local_url('apActorFollowers', ['id' => $profile_id]).'?page=1';
+        } else {
+            $res['partOf'] = common_local_url('apActorFollowers', ['id' => $profile_id]);
+
+            if ($page+1 < $total_pages) {
+                $res['next'] = common_local_url('apActorFollowers', ['id' => $profile_id]).'page='.($page+1 == 1 ? 2 : $page+1);
+            }
+
+            if ($page > 1) {
+                $res['prev'] = common_local_url('apActorFollowers', ['id' => $profile_id]).'?page='.($page-1 <= 0 ? 1 : $page-1);
+            }
+        }
 
         ActivityPubReturn::answer($res);
     }

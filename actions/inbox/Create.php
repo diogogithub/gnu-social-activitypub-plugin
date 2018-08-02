@@ -33,9 +33,11 @@ $valid_object_types = ['Note'];
 
 $res = $data->object;
 
-if (!Activitypub_notice::validate_remote_notice((array) $res, $msg)) {
-    common_debug('ActivityPub Inbox Create Note: Invalid note: '.$msg);
-    ActivityPubReturn::error($msg);
+try {
+    Activitypub_notice::validate_remote_notice((array) $res);
+} catch (Exception $e) {
+    common_debug('ActivityPub Inbox Create Note: Invalid note: '.$e->getMessage());
+    ActivityPubReturn::error($e->getMessage());
 }
 
 $settings = [];

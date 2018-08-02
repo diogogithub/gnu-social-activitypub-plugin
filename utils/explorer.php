@@ -215,18 +215,9 @@ class Activitypub_explorer
             $res = $this->temp_res;
             unset($this->temp_res);
         }
-        if (isset($res["orderedItems"])) { // It's a potential collection of actors!!!
+        if (isset($res['type']) && $res['type'] === 'OrderedCollection' && isset ($res['first'])) { // It's a potential collection of actors!!!
             common_debug('ActivityPub Explorer: Found a collection of actors for '.$url);
-            foreach ($res["orderedItems"] as $profile) {
-                if ($this->_lookup($profile) == false) {
-                    common_debug('ActivityPub Explorer: Found an invalid actor for '.$profile);
-                    // TODO: Invalid actor found, fallback to OStatus
-                }
-            }
-            // Go through entire collection
-            if (!is_null($res["next"])) {
-                $this->_lookup($res["next"]);
-            }
+            $this->travell_collection($res['first']);
             return true;
         } elseif (self::validate_remote_response($res)) {
             common_debug('ActivityPub Explorer: Found a valid remote actor for '.$url);
@@ -407,5 +398,40 @@ class Activitypub_explorer
         }
 
         return false;
+    }
+
+    /**
+     * Allows the Explorer to transverse a collection of persons.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param type $url
+     * @return boolean
+     */
+    private function travel_collection($url)
+    {
+        $client    = new HTTPClient();
+        $headers   = array();
+        $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
+        $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
+        $response  = $client->get($url, $headers);
+        $res = json_decode($response->getBody(), true);
+
+        if (!isset($res['orderedItems']))
+        {
+            return false;
+        }
+        
+        foreach ($res["orderedItems"] as $profile) {
+            if ($this->_lookup($profile) == false) {
+                common_debug('ActivityPub Explorer: Found an invalid actor for '.$profile);
+                // TODO: Invalid actor found, fallback to OStatus
+            }
+        }
+        // Go through entire collection
+        if (!is_null($res["next"])) {
+            $this->_lookup($res["next"]);
+        }
+
+        return true;
     }
 }
