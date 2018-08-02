@@ -61,5 +61,5 @@ if (!Subscription::exists($actor_profile, $object_profile)) {
     ActivityPubReturn::answer();
 } else {
     common_debug('ActivityPubPlugin: Received a repeated Follow request from '.$data['actor'].' to '.$data['object']);
-    ActivityPubReturn::error('Already following.', 409);
+    ActivityPubReturn::error('Already following.', 202);
 }
