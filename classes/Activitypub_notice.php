@@ -134,7 +134,7 @@ class Activitypub_notice extends Managed_DataObject
             try {
                 $inReplyTo = ActivityPubPlugin::grab_notice_from_url($settings['inReplyTo']);
             } catch (Exception $e) {
-                throw new Exception('Invalid Object inReplyTo value.');
+                throw new Exception('Invalid Object inReplyTo value: '.$e->getMessage());
             }
             $act->context->replyToID  = $inReplyTo->getUri();
             $act->context->replyToUrl = $inReplyTo->getUrl();

@@ -420,7 +420,7 @@ class Activitypub_explorer
         {
             return false;
         }
-        
+
         foreach ($res["orderedItems"] as $profile) {
             if ($this->_lookup($profile) == false) {
                 common_debug('ActivityPub Explorer: Found an invalid actor for '.$profile);
