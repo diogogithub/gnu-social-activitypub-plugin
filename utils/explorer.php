@@ -269,7 +269,12 @@ class Activitypub_explorer
 
         // Avatar
         if (isset($res['icon']['url'])) {
-            $this->_store_avatar($profile, $res['icon']['url']);
+            try {
+                $this->_store_avatar($profile, $res['icon']['url']);
+            } catch (Exception $e) {
+                // Let the exception go, it isn't a serious issue
+                common_debug('An error ocurred while grabbing remote avatar'.$e->getMessage());
+            }
         }
 
         return $profile;
@@ -297,7 +302,7 @@ class Activitypub_explorer
             $imgData = HTTPClient::quickGet($url);
             // Make sure it's at least an image file. ImageFile can do the rest.
             if (false === getimagesizefromstring($imgData)) {
-                throw new UnsupportedMediaException('Downloaded group avatar was not an image.');
+                throw new UnsupportedMediaException('Downloaded avatar was not an image.');
             }
             file_put_contents($temp_filename, $imgData);
             unset($imgData);    // No need to carry this in memory.
@@ -307,9 +312,9 @@ class Activitypub_explorer
             $imagefile = new ImageFile(null, $temp_filename);
             $filename = Avatar::filename(
                 $id,
-                                         image_type_to_extension($imagefile->type),
-                                         null,
-                                         common_timestamp()
+                image_type_to_extension($imagefile->type),
+                null,
+                common_timestamp()
             );
             rename($temp_filename, Avatar::path($filename));
         } catch (Exception $e) {

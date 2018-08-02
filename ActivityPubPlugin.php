@@ -121,11 +121,9 @@ class ActivityPubPlugin extends Plugin
         $response  = $client->get($url, $headers);
         $res = json_decode($response->getBody(), true);
         $settings = [];
-        try {
-            Activitypub_notice::validate_remote_notice($res);
-        } catch (Exception $e) {
+        if (!Activitypub_notice::validate_remote_notice($res, $msg)) {
             common_debug('ActivityPubPlugin Notice Grabber: Invalid potential remote notice while processing id: '.$url. '. He returned the following: '.json_encode($res, JSON_UNESCAPED_SLASHES));
-            throw $e;
+            throw new Exception($msg);
         }
 
         if (isset($res->inReplyTo)) {

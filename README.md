@@ -8,7 +8,7 @@ It includes general information about the plugin.
 
 ## About
 
-This plugin adds [ActivityPub](https://www.w3.org/TR/activitypub/) support to 
+This plugin adds [ActivityPub](https://www.w3.org/TR/activitypub/) support to
 GNU Social.
 
 ## Setup
@@ -31,11 +31,11 @@ GNU Social.
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting merge requests to us.
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://git.gnu.io/gnu/GS-ActivityPub-Plugin/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://git.gnu.io/gnu/GS-ActivityPub-Plugin/tags).
 
 ## Credits
 
