@@ -217,7 +217,7 @@ class Activitypub_explorer
         }
         if (isset($res['type']) && $res['type'] === 'OrderedCollection' && isset ($res['first'])) { // It's a potential collection of actors!!!
             common_debug('ActivityPub Explorer: Found a collection of actors for '.$url);
-            $this->travell_collection($res['first']);
+            $this->travel_collection($res['first']);
             return true;
         } elseif (self::validate_remote_response($res)) {
             common_debug('ActivityPub Explorer: Found a valid remote actor for '.$url);
