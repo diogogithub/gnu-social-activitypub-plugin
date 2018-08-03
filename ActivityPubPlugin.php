@@ -35,6 +35,7 @@ date_default_timezone_set('UTC');
 // Import required files by the plugin
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'discoveryhints.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'AcceptHeader.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'explorer.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'postman.php';
 
@@ -163,27 +164,29 @@ class ActivityPubPlugin extends Plugin
      */
     public function onRouterInitialized(URLMapper $m)
     {
-        ActivityPubURLMapperOverwrite::variable(
-            $m,
-            'user/:id',
-            ['id'     => '[0-9]+'],
-            'apActorProfile'
-        );
+        if (ActivityPubURLMapperOverwrite::should()) {
+            ActivityPubURLMapperOverwrite::variable(
+                $m,
+                'user/:id',
+                ['id'     => '[0-9]+'],
+                'apActorProfile'
+            );
 
-        // Special route for webfinger purposes
-        ActivityPubURLMapperOverwrite::variable(
-            $m,
-            ':nickname',
-            ['nickname' => Nickname::DISPLAY_FMT],
-            'apActorProfile'
-        );
+            // Special route for webfinger purposes
+            ActivityPubURLMapperOverwrite::variable(
+                $m,
+                ':nickname',
+                ['nickname' => Nickname::DISPLAY_FMT],
+                'apActorProfile'
+            );
 
-        ActivityPubURLMapperOverwrite::variable(
-            $m,
-            'notice/:id',
-            ['id'     => '[0-9]+'],
-            'apNotice'
-        );
+            ActivityPubURLMapperOverwrite::variable(
+                $m,
+                'notice/:id',
+                ['id'     => '[0-9]+'],
+                'apNotice'
+            );
+        }
 
         $m->connect(
             'user/:id/liked.json',
@@ -944,59 +947,6 @@ class ActivityPubReturn
         echo json_encode($res, JSON_UNESCAPED_SLASHES);
         exit;
     }
-
-    /**
-     * Select content type from HTTP Accept header
-     *
-     * @author Maciej Łebkowski <m.lebkowski@gmail.com>
-     * @param array $mimeTypes Supported Types
-     * @return array|null of supported mime types sorted | null if none valid
-     */
-    public static function getBestSupportedMimeType($mimeTypes)
-    {
-        // XXX: This function needs improvement!
-        if (!isset($_SERVER['HTTP_ACCEPT'])) {
-            return null;
-        }
-
-        // This mime type was messing everything, thus the special case
-        if ($_SERVER['HTTP_ACCEPT'] == 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"') {
-            return true;
-        }
-
-        // Values will be stored in this array
-        $AcceptTypes = [];
-
-        // Accept header is case insensitive, and whitespace isn’t important
-        $accept = strtolower(str_replace(' ', '', $_SERVER['HTTP_ACCEPT']));
-        // divide it into parts in the place of a ","
-        $accept = explode(',', $accept);
-        foreach ($accept as $a) {
-            // the default quality is 1.
-            $q = 1;
-            // check if there is a different quality
-            if (strpos($a, ';q=')) {
-                // divide "mime/type;q=X" into two parts: "mime/type" and "X"
-                list($a, $q) = explode(';q=', $a);
-            }
-            // mime-type $a is accepted with the quality $q
-            // WARNING: $q == 0 means, that mime-type isn’t supported!
-            $AcceptTypes[$a] = $q;
-        }
-        arsort($AcceptTypes);
-
-        $mimeTypes = array_map('strtolower', $mimeTypes);
-
-        // let’s check our supported types:
-        foreach ($AcceptTypes as $mime => $q) {
-            if ($q && in_array($mime, $mimeTypes)) {
-                return $mime;
-            }
-        }
-
-        // no mime-type found
-        return null;
-    }
 }
 
 /**
@@ -1004,19 +954,18 @@ class ActivityPubReturn
  */
 class ActivityPubURLMapperOverwrite extends URLMapper
 {
+    /**
+     * Overwrites a route.
+     *
+     * @author Hannes Mannerheim <h@nnesmannerhe.im>
+     * @param URLMapper $m
+     * @param string $path
+     * @param string $paramPatterns
+     * @param string $newaction
+     * @return void
+     */
     public static function variable($m, $path, $paramPatterns, $newaction)
     {
-        $mimes = [
-            'application/json',
-            'application/activity+json',
-            'application/ld+json',
-            'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'
-        ];
-
-        if (is_null(ActivityPubReturn::getBestSupportedMimeType($mimes))) {
-            return true;
-        }
-
         $m->connect($path, array('action' => $newaction), $paramPatterns);
         $regex = self::makeRegex($path, $paramPatterns);
         foreach ($m->variables as $n => $v) {
@@ -1024,5 +973,36 @@ class ActivityPubURLMapperOverwrite extends URLMapper
                 $m->variables[$n][0]['action'] = $newaction;
             }
         }
+    }
+
+    /**
+     * Determines whether the route should or not be overwrited.
+     * If ACCEPT header isn't set false will be returned.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @return boolean true if it should, false otherwise
+     */
+    public static function should()
+    {
+        // Do not operate without Accept Header
+        if (!isset($_SERVER['HTTP_ACCEPT'])) {
+            return false;
+        }
+
+        $mimes = [
+            'application/ld+json; profile="https://www.w3.org/ns/activitystreams"' => 0,
+            'application/activity+json' => 1,
+            'application/json' => 2,
+            'application/ld+json' => 3
+        ];
+
+        $acceptheader = new AcceptHeader($_SERVER['HTTP_ACCEPT']);
+        foreach ($acceptheader as $ah) {
+            if (isset($mimes[$ah['raw']])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
