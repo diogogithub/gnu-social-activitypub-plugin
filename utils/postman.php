@@ -244,15 +244,18 @@ class Activitypub_postman
      */
     public function delete($notice)
     {
-        $data = Activitypub_delete::delete_to_array(Activitypub_notice::notice_to_array($notice));
+        $data = Activitypub_delete::delete_to_array(
+                    ActivityPubPlugin::actor_uri($notice->getProfile()),
+                    $notice->getUrl()
+                );
         $errors = [];
         $data = json_encode($data, JSON_UNESCAPED_SLASHES);
         foreach ($this->to_inbox() as $inbox) {
             $res = $this->send($data, $inbox);
             if (!$res->getStatusCode() == 200) {
-                $res_body = json_decode($res->getBody()->getContents());
-                if (isset($res_body[0]->error)) {
-                    $errors[] = ($res_body[0]->error);
+                $res_body = json_decode($res->getBody()->getContents(), true);
+                if (isset($res_body[0]['error'])) {
+                    $errors[] = ($res_body[0]['error']);
                     continue;
                 }
                 $errors[] = ("An unknown error occurred.");

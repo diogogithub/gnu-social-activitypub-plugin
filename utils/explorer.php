@@ -294,7 +294,7 @@ class Activitypub_explorer
             $imgData = HTTPClient::quickGet($url);
             // Make sure it's at least an image file. ImageFile can do the rest.
             if (false === getimagesizefromstring($imgData)) {
-                common_debug('ActivityPub Explorer: Failed because the downloaded avatar: '.$url. 'is not a validad image.');
+                common_debug('ActivityPub Explorer: Failed because the downloaded avatar: '.$url. 'is not a valid image.');
                 throw new UnsupportedMediaException('Downloaded avatar was not an image.');
             }
             file_put_contents($temp_filename, $imgData);

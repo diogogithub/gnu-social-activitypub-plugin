@@ -47,13 +47,13 @@ class Activitypub_delete extends Managed_DataObject
      * @param array $object
      * @return pretty array to be used in a response
      */
-    public static function delete_to_array($object)
+    public static function delete_to_array($actor, $object)
     {
         $res = [
             '@context' => 'https://www.w3.org/ns/activitystreams',
-            'id'     => $object['id'].'/delete',
+            'id'     => $object.'/delete',
             'type'   => 'Delete',
-            'actor'  => $object['actor'],
+            'actor'  => $actor,
             'object' => $object
         ];
         return $res;

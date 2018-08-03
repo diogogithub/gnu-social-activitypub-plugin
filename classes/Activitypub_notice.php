@@ -116,7 +116,7 @@ class Activitypub_notice extends Managed_DataObject
      * @param string $url
      * @param string $content
      * @param array|string $cc
-     * @param array $settings possible keys: ['inReplyTo', 'latitude', 'longitude']
+     * @param array $settings possible keys: ['inReplyTo', 'latitude', 'longitude', 'attachment']
      * @return Notice
      * @throws Exception
      */
@@ -126,8 +126,44 @@ class Activitypub_notice extends Managed_DataObject
         $act->verb = ActivityVerb::POST;
         $act->time = time();
         $act->actor = $actor_profile->asActivityObject();
-
         $act->context = new ActivityContext();
+        $options = ['source' => 'ActivityPub', 'uri' => $id, 'url' => $url];
+
+        // Do we have an attachment?
+        if (isset($settings['attachment'][0])) {
+            $attach = $settings['attachment'][0];
+            $attach_url = $settings['attachment'][0]['url'];
+            // Is it an image?
+            if (ActivityPubPlugin::$store_images_from_remote_notes_attachments && substr($attach["mediaType"], 0, 5) == "image") {
+                $temp_filename = tempnam(sys_get_temp_dir(), 'apCreateNoteAttach_');
+                try {
+                    $imgData = HTTPClient::quickGet($attach_url);
+                    // Make sure it's at least an image file. ImageFile can do the rest.
+                    if (false === getimagesizefromstring($imgData)) {
+                        common_debug('ActivityPub Create Notice: Failed because the downloaded image: '.$attach_url. 'is not valid.');
+                        throw new UnsupportedMediaException('Downloaded image was not an image.');
+                    }
+                    file_put_contents($temp_filename, $imgData);
+                    unset($imgData);    // No need to carry this in memory.
+                    common_debug('ActivityPub Create Notice: Stored dowloaded image in: '.$temp_filename);
+
+                    $id = $actor_profile->getID();
+
+                    $imagefile = new ImageFile(null, $temp_filename);
+                    $filename = hash(File::FILEHASH_ALG, $imgData).image_type_to_extension($imagefile->type);
+                    rename($temp_filename, File::path($filename));
+                    common_debug('ActivityPub Create Notice: Moved image from: '.$temp_filename.' to '.$filename);
+                    $mediaFile = new MediaFile($filename, $attach['mediaType']);
+                    $act->enclosures[] = $mediaFile->getEnclosure();
+                } catch (Exception $e) {
+                    common_debug('ActivityPub Create Notice: Something went wrong while processing the image from: '.$attach_url.' details: '.$e->getMessage());
+                    unlink($temp_filename);
+                    $content .= ($content==='' ? '' : ' ') . $attach_url;
+                }
+            } else {
+                $content .= ($content==='' ? '' : ' ') . $attach_url;
+            }
+        }
 
         // Is this a reply?
         if (isset($settings['inReplyTo'])) {
@@ -181,8 +217,6 @@ class Activitypub_notice extends Managed_DataObject
             //throw new Exception('That\'s too long. Maximum notice size is %d character.');
         }
 
-        $options = ['source' => 'ActivityPub', 'uri' => $id, 'url' => $url];
-
         $actobj = new ActivityObject();
         $actobj->type = ActivityObject::NOTE;
         $actobj->content = strip_tags($content, '<p><b><i><u><a><ul><ol><li>');
@@ -191,7 +225,11 @@ class Activitypub_notice extends Managed_DataObject
         $act->objects[] = $actobj;
 
         try {
-            return Notice::saveActivity($act, $actor_profile, $options);
+            $note = Notice::saveActivity($act, $actor_profile, $options);
+            if (ActivityPubPlugin::$store_images_from_remote_notes_attachments && isset($mediaFile)) {
+                $mediaFile->attachToNotice($note);
+            }
+            return $note;
         } catch (Exception $e) {
             throw $e;
         }

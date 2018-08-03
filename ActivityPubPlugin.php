@@ -55,6 +55,8 @@ const ACTIVITYPUB_PUBLIC_TO = ['https://www.w3.org/ns/activitystreams#Public',
  */
 class ActivityPubPlugin extends Plugin
 {
+    public static $store_images_from_remote_notes_attachments = true;
+
     /**
      * Returns a Actor's URI from its local $profile
      * Works both for local and remote users.

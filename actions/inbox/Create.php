@@ -51,6 +51,9 @@ if (isset($res['latitude'])) {
 if (isset($res['longitude'])) {
     $settings['longitude'] = $res['longitude'];
 }
+if (isset($res['attachment'])) {
+    $settings['attachment'] = $res['attachment'];
+}
 
 try {
     Activitypub_notice::create_notice(
