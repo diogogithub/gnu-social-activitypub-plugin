@@ -88,36 +88,43 @@ class apActorInboxAction extends ManagedAction
             ActivityPubReturn::error($e->getMessage(), 404);
         }
 
-        $to_profiles = [$profile];
+        $cc = [$profile];
 
         // Process request
+        define('INBOX_HANDLERS', __DIR__ . DIRECTORY_SEPARATOR . 'inbox' . DIRECTORY_SEPARATOR);
         switch ($data['type']) {
-            case "Create":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Create.php";
-                    break;
-            case "Delete":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Delete.php";
-                    break;
-            case "Follow":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Follow.php";
-                    break;
-            case "Like":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Like.php";
-                    break;
-            case "Undo":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Undo.php";
-                    break;
-            case "Announce":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Announce.php";
-                    break;
-            case "Accept":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Accept.php";
-                    break;
-            case "Reject":
-                    require_once __DIR__ . DIRECTORY_SEPARATOR . "inbox" . DIRECTORY_SEPARATOR . "Reject.php";
-                    break;
+            // Data available:
+            // Profile       $actor_profile Actor performing the action
+            // string|object $data->object  Object to be handled
+            // Array|String  $cc            Destinataries
+            // Profile       $profile       Local user to whom this action is directed
+            case 'Create':
+                $cc = array_merge ([$profile], $data['object']['cc']);
+                require_once INBOX_HANDLERS . 'Create.php';
+                break;
+            case 'Follow':
+                require_once INBOX_HANDLERS . 'Follow.php';
+                break;
+            case 'Like':
+                require_once INBOX_HANDLERS . 'Like.php';
+                break;
+            case 'Announce':
+                require_once INBOX_HANDLERS . 'Announce.php';
+                break;
+            case 'Undo':
+                require_once INBOX_HANDLERS . 'Undo.php';
+                break;
+            case 'Delete':
+                require_once INBOX_HANDLERS . 'Delete.php';
+                break;
+            case 'Accept':
+                require_once INBOX_HANDLERS . 'Accept.php';
+                break;
+            case 'Reject':
+                require_once INBOX_HANDLERS . 'Reject.php';
+                break;
             default:
-                    ActivityPubReturn::error("Invalid type value.");
+                ActivityPubReturn::error('Invalid type value.');
         }
     }
 }

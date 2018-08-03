@@ -31,8 +31,6 @@ if (!defined('GNUSOCIAL')) {
 
 $valid_object_types = ['Note'];
 
-$res = $data['object'];
-
 try {
     Activitypub_notice::validate_remote_notice($res);
 } catch (Exception $e) {
@@ -61,7 +59,7 @@ try {
         $res['id'],
         $res['url'],
         $res['content'],
-        $res['cc'],
+        $cc,
         $settings
     );
     ActivityPubReturn::answer();

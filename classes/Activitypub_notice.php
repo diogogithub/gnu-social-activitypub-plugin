@@ -144,13 +144,13 @@ class Activitypub_notice extends Managed_DataObject
                         throw new UnsupportedMediaException('Downloaded image was not an image.');
                     }
                     file_put_contents($temp_filename, $imgData);
-                    unset($imgData);    // No need to carry this in memory.
                     common_debug('ActivityPub Create Notice: Stored dowloaded image in: '.$temp_filename);
 
                     $id = $actor_profile->getID();
 
                     $imagefile = new ImageFile(null, $temp_filename);
                     $filename = hash(File::FILEHASH_ALG, $imgData).image_type_to_extension($imagefile->type);
+                    unset($imgData);    // No need to carry this in memory.
                     rename($temp_filename, File::path($filename));
                     common_debug('ActivityPub Create Notice: Moved image from: '.$temp_filename.' to '.$filename);
                     $mediaFile = new MediaFile($filename, $attach['mediaType']);
@@ -186,7 +186,7 @@ class Activitypub_notice extends Managed_DataObject
             array_unique($cc);
             foreach ($cc as $cc_url) {
                 try {
-                    $cc_profiles = array_merge($cc_profiles, $discovery->lookup($cc_url));
+                    $cc = array_merge($cc, $discovery->lookup($cc_url));
                 } catch (Exception $e) {
                     // Invalid actor found, just let it go. // TODO: Fallback to OStatus
                 }
@@ -195,7 +195,7 @@ class Activitypub_notice extends Managed_DataObject
             // No need to do anything else at this point, let's just break out the if
         } else {
             try {
-                $cc_profiles = array_merge($cc_profiles, $discovery->lookup($cc));
+                $cc = array_merge($cc, $discovery->lookup($cc));
             } catch (Exception $e) {
                 // Invalid actor found, just let it go. // TODO: Fallback to OStatus
             }
@@ -203,7 +203,7 @@ class Activitypub_notice extends Managed_DataObject
 
         unset($discovery);
 
-        foreach ($cc_profiles as $tp) {
+        foreach ($cc as $tp) {
             $act->context->attention[ActivityPubPlugin::actor_uri($tp)] = 'http://activitystrea.ms/schema/1.0/person';
         }
 
