@@ -231,7 +231,6 @@ class Activitypub_postman
     public function create($notice)
     {
         $data = Activitypub_create::create_to_array(
-                    $notice->getUrl(),
                     $this->actor_uri,
                     Activitypub_notice::notice_to_array($notice)
                 );

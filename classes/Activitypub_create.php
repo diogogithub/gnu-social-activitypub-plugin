@@ -48,14 +48,14 @@ class Activitypub_create extends Managed_DataObject
      * @param array $object
      * @return pretty array to be used in a response
      */
-    public static function create_to_array($id, $actor, $object)
+    public static function create_to_array($actor, $object)
     {
         $res = [
             '@context' => [
                     'https://www.w3.org/ns/activitystreams',
                     'https://w3id.org/security/v1'
             ],
-            'id'     => $id.'/create',
+            'id'     => $object.'/create',
             'type'   => 'Create',
             'to'     => $object['to'],
             'cc'     => $object['cc'],
