@@ -228,7 +228,7 @@ class Activitypub_postman
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Notice $notice
      */
-    public function create($notice)
+    public function create_note($notice)
     {
         $data = Activitypub_create::create_to_array(
                     $this->actor_uri,

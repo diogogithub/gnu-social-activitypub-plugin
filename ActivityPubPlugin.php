@@ -842,7 +842,7 @@ class ActivityPubPlugin extends Plugin
         $postman = new Activitypub_postman($profile, $other);
 
         // That was it
-        $postman->create($notice);
+        $postman->create_note($notice);
         return true;
     }
 
