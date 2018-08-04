@@ -123,7 +123,10 @@ class apActorOutboxAction extends ManagedAction
 
             // TODO: Handle other types
             if ($note->object_type == 'http://activitystrea.ms/schema/1.0/note') {
-                $notices[] = Activitypub_notice::notice_to_array($note);
+                $notices[] = Activitypub_create::create_to_array(
+                    ActivityPubPlugin::actor_uri($note->getProfile()), 
+                    Activitypub_notice::notice_to_array($note)
+                );
             }
         }
 
