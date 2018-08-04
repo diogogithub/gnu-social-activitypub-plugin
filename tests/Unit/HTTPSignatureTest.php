@@ -34,7 +34,7 @@ class HTTPSignatureTest extends TestCase
         $this->assertTrue(class_exists('\HttpSignatures\Context'));
         $this->assertTrue(class_exists('\HttpSignatures\GuzzleHttpSignatures'));
     }
-    
+
     public function setUp()
     {
         $this->context = new Context([

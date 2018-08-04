@@ -29,14 +29,42 @@ if (!defined('GNUSOCIAL')) {
     exit(1);
 }
 
-try {
-    try {
-        $object_notice = ActivityPubPlugin::grab_notice_from_url($data['object']);
-    } catch (Exception $e) {
-        ActivityPubReturn::error('Invalid Object specified.');
+/**
+ * Inbox Request Handler
+ *
+ * @category  Plugin
+ * @package   GNUsocial
+ * @author    Diogo Cordeiro <diogo@fc.up.pt>
+ * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
+ * @link      http://www.gnu.org/software/social/
+ */
+class apInboxAction extends ManagedAction
+{
+    protected $needLogin = false;
+    protected $canPost   = true;
+
+    /**
+     * Handle the Inbox request
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @return void
+     */
+    protected function handle()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            ActivityPubReturn::error('Only POST requests allowed.');
+        }
+
+        common_debug('ActivityPub Shared Inbox: Received a POST request.');
+        $data = file_get_contents('php://input');
+        common_debug('ActivityPub Shared Inbox: Request contents: '.$data);
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        try {
+            new Activitypub_inbox_handler($data);
+            ActivityPubReturn::answer();
+        } catch (Exception $e) {
+            ActivityPubReturn::error($e->getMessage());
+        }
     }
-    Fave::addNew($actor_profile, $object_notice);
-    ActivityPubReturn::answer();
-} catch (Exception $e) {
-    ActivityPubReturn::error($e->getMessage(), 403);
 }

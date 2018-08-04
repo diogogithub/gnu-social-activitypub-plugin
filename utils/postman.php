@@ -103,7 +103,7 @@ class Activitypub_postman
         common_debug('ActivityPub Postman: Delivery result with status code '.$response->getStatusCode().': '.$response->getBody()->getContents());
         return $response;
     }
-    
+
     /**
      * Send a follow notification to remote instance
      *
@@ -135,11 +135,39 @@ class Activitypub_postman
     public function undo_follow()
     {
         $data = Activitypub_undo::undo_to_array(
-                         Activitypub_follow::follow_to_array(
-                             ActivityPubPlugin::actor_uri($this->actor),
-                             $this->to[0]->getUrl()
-                         )
-                        );
+                    Activitypub_follow::follow_to_array(
+                        ActivityPubPlugin::actor_uri($this->actor),
+                        $this->to[0]->getUrl()
+                    )
+                );
+        $res = $this->send(json_encode($data, JSON_UNESCAPED_SLASHES), $this->to[0]->get_inbox());
+        $res_body = json_decode($res->getBody()->getContents());
+
+        if ($res->getStatusCode() == 200 || $res->getStatusCode() == 202 || $res->getStatusCode() == 409) {
+            $pending_list = new Activitypub_pending_follow_requests($this->actor->getID(), $this->to[0]->getID());
+            $pending_list->remove();
+            return true;
+        }
+        if (isset($res_body[0]->error)) {
+            throw new Exception($res_body[0]->error);
+        }
+        throw new Exception("An unknown error occurred.");
+    }
+
+    /**
+     * Send a Accept Follow notification to remote instance
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     */
+    public function accept_follow()
+    {
+        $data = Activitypub_accept::accept_to_array(
+                    Activitypub_follow::follow_to_array(
+                       $this->to[0]->getUrl(),
+                       ActivityPubPlugin::actor_uri($this->actor)
+
+                    )
+               );
         $res = $this->send(json_encode($data, JSON_UNESCAPED_SLASHES), $this->to[0]->get_inbox());
         $res_body = json_decode($res->getBody()->getContents());
 
@@ -278,7 +306,7 @@ class Activitypub_postman
         foreach ($this->to as $to_profile) {
             $i = $to_profile->get_inbox();
             // Prevent delivering to self
-            if ($i == [common_local_url('apSharedInbox')]) {
+            if ($i == [common_local_url('apInbox')]) {
                 continue;
             }
             $to_inboxes[] = $i;

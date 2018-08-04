@@ -51,7 +51,10 @@ class Activitypub_create extends Managed_DataObject
     public static function create_to_array($id, $actor, $object)
     {
         $res = [
-            '@context' => 'https://www.w3.org/ns/activitystreams',
+            '@context' => [
+                    'https://www.w3.org/ns/activitystreams',
+                    'https://w3id.org/security/v1'
+            ],
             'id'     => $id.'/create',
             'type'   => 'Create',
             'to'     => $object['to'],
@@ -60,5 +63,30 @@ class Activitypub_create extends Managed_DataObject
             'object' => $object
         ];
         return $res;
+    }
+
+    /**
+     * Verifies if a given object is acceptable for a Create Activity.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param Array $object
+     * @throws Exception
+     */
+    public static function validate_object($object)
+    {
+        if (!is_array($object)) {
+            throw new Exception('Invalid Object Format for Create Activity.');
+        }
+        if (!isset($object['type'])) {
+            throw new Exception('Object type was not specified for Create Activity.');
+        }
+        switch ($object['type']) {
+            case 'Note':
+                // Validate data
+                Activitypub_notice::validate_note($object);
+                break;
+            default:
+                throw new Exception('This is not a supported Object Type for Create Activity.');
+        }
     }
 }

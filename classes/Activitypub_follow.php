@@ -62,4 +62,34 @@ class Activitypub_follow extends Managed_DataObject
        ];
         return $res;
     }
+
+    /**
+     * Handles a Follow Activity received by our inbox.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param Profile $actor_profile Remote Actor
+     * @param string $object Local Actor
+     * @throws Exception
+     */
+    public static function follow($actor_profile, $object)
+    {
+        // Get Actor's Aprofile
+        $actor_aprofile = Activitypub_profile::from_profile($actor_profile);
+
+        // Get Object profile
+        $object_profile = new Activitypub_explorer;
+        $object_profile = $object_profile->lookup($object)[0];
+
+        if (!Subscription::exists($actor_profile, $object_profile)) {
+            Subscription::start($actor_profile, $object_profile);
+            common_debug('ActivityPubPlugin: Accepted Follow request from '.ActivityPubPlugin::actor_uri($actor_profile).' to '.$object);
+        } else {
+            common_debug('ActivityPubPlugin: Received a repeated Follow request from '.ActivityPubPlugin::actor_uri($actor_profile).' to '.$object);
+        }
+
+        // Notify remote instance that we have accepted their request
+        common_debug('ActivityPubPlugin: Notifying remote instance that we have accepted their Follow request request from '.ActivityPubPlugin::actor_uri($actor_profile).' to '.$object);
+        $postman = new Activitypub_postman($actor_profile, [$actor_aprofile]);
+        $postman->accept_follow();
+    }
 }

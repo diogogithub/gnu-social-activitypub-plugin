@@ -38,6 +38,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'd
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'AcceptHeader.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'explorer.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'postman.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'utils' .  DIRECTORY_SEPARATOR . 'inbox_handler.php';
 
 // So that this isn't hardcoded everywhere
 define('ACTIVITYPUB_BASE_ACTOR_URI', common_root_url().'index.php/user/');
@@ -122,40 +123,9 @@ class ActivityPubPlugin extends Plugin
         $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
         $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
         $response  = $client->get($url, $headers);
-        $res = json_decode($response->getBody(), true);
-        $settings = [];
-        try {
-            Activitypub_notice::validate_remote_notice($res);
-        } catch (Exception $e) {
-            common_debug('ActivityPubPlugin Notice Grabber: Invalid potential remote notice while processing id: '.$url. '. He returned the following: '.json_encode($res, JSON_UNESCAPED_SLASHES));
-            throw $e;
-        }
-
-        if (isset($res->inReplyTo)) {
-            $settings['inReplyTo'] = $res->inReplyTo;
-        }
-        if (isset($res->latitude)) {
-            $settings['latitude'] = $res->latitude;
-        }
-        if (isset($res->longitude)) {
-            $settings['longitude'] = $res->longitude;
-        }
-        try {
-            return Activitypub_notice::create_notice(
-                ActivityPub_explorer::get_profile_from_url($res['attributedTo']),
-                $res['id'],
-                $res['url'],
-                $res['content'],
-                $res['cc'],
-                $settings
-            );
-        } catch (Exception $e) {
-            common_debug('ActivityPubPlugin Notice Grabber: failed to find: '.$url.' online.');
-            throw $e;
-        }
-
-        // When all the above failed in its quest of grabbing the Notice
-        throw new Exception('Notice not found.');
+        $object = json_decode($response->getBody(), true);
+        Activitypub_notice::validate_note($object);
+        return Activitypub_notice::create_notice($object);
     }
 
     /**
@@ -210,13 +180,13 @@ class ActivityPubPlugin extends Plugin
 
         $m->connect(
             'user/:id/inbox.json',
-                    ['action' => 'apActorInbox'],
+                    ['action' => 'apInbox'],
                     ['id' => '[0-9]+']
                 );
 
         $m->connect(
             'inbox.json',
-                    ['action' => 'apSharedInbox']
+                    ['action' => 'apInbox']
                 );
     }
 
@@ -941,7 +911,7 @@ class ActivityPubReturn
      * @param int32 $code Status Code
      * @return void
      */
-    public static function error($m, $code = 500)
+    public static function error($m, $code = 400)
     {
         http_response_code($code);
         header('Content-Type: application/activity+json');

@@ -61,4 +61,32 @@ class Activitypub_accept extends Managed_DataObject
         ];
         return $res;
     }
+
+    /**
+     * Verifies if a given object is acceptable for an Accept Activity.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param Array $object
+     * @throws Exception
+     */
+    public static function validate_object($object)
+    {
+        if (!is_array($object)) {
+            throw new Exception('Invalid Object Format for Accept Activity.');
+        }
+        if (!isset($object['type'])) {
+            throw new Exception('Object type was not specified for Accept Activity.');
+        }
+        switch ($object['type']) {
+            case 'Follow':
+                // Validate data
+                if (!filter_var($object['object'], FILTER_VALIDATE_URL)) {
+                    throw new Exception("Object is not a valid Object URI for Activity.");
+                }
+                break;
+            default:
+                throw new Exception('This is not a supported Object Type for Accept Activity.');
+        }
+        return true;
+    }
 }

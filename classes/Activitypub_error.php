@@ -50,8 +50,8 @@ class Activitypub_error extends Managed_DataObject
     public static function error_message_to_array($m)
     {
         $res = [
-                        'error'=> $m
-                ];
+            'error'=> $m
+        ];
         return $res;
     }
 }

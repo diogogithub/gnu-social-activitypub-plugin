@@ -72,12 +72,15 @@ class Activitypub_notice extends Managed_DataObject
         $to[]= 'https://www.w3.org/ns/activitystreams#Public';
 
         $item = [
-            '@context'     => 'https://www.w3.org/ns/activitystreams',
+            '@context' => [
+                    'https://www.w3.org/ns/activitystreams',
+                    'https://w3id.org/security/v1'
+            ],
             'id'           => $notice->getUrl(),
             'type'         => 'Note',
             'published'    => str_replace(' ', 'T', $notice->getCreated()).'Z',
             'url'          => $notice->getUrl(),
-            'atributtedTo' => ActivityPubPlugin::actor_uri($profile),
+            'attributedTo' => ActivityPubPlugin::actor_uri($profile),
             'to'           => ['https://www.w3.org/ns/activitystreams#Public'],
             'cc'           => $cc,
             'atomUri'      => $notice->getUrl(),
@@ -107,21 +110,42 @@ class Activitypub_notice extends Managed_DataObject
     }
 
     /**
-     * Create a Notice via ActivityPub data.
+     * Create a Notice via ActivityPub Note Object.
      * Returns created Notice.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
-     * @param Profile $actor_profile
-     * @param int32 $id
-     * @param string $url
-     * @param string $content
-     * @param array|string $cc
-     * @param array $settings possible keys: ['inReplyTo', 'latitude', 'longitude', 'attachment']
+     * @param Array $object
+     * @param Profile|null $actor_profile
      * @return Notice
      * @throws Exception
      */
-    public static function create_notice($actor_profile, $id, $url, $content, $cc, $settings)
+    public static function create_notice($object, $actor_profile = null)
     {
+        $id      = $object['id'];         // int32
+        $url     = $object['url'];        // string
+        $content = $object['content'];    // string
+        $cc      = $object['cc'];         // array|string
+
+        // possible keys: ['inReplyTo', 'latitude', 'longitude', 'attachment']
+        $settings = [];
+        if (isset($object['inReplyTo'])) {
+            $settings['inReplyTo'] = $object['inReplyTo'];
+        }
+        if (isset($object['latitude'])) {
+            $settings['latitude']  = $object['latitude'];
+        }
+        if (isset($object['longitude'])) {
+            $settings['longitude'] = $object['longitude'];
+        }
+        if (isset($object['attachment'])) {
+            $settings['attachment'] = $object['attachment'];
+        }
+
+        // Ensure Actor Profile
+        if (is_null($actor_profile)) {
+            $actor_profile = ActivityPub_explorer::get_profile_from_url($object['actor']);
+        }
+
         $act = new Activity();
         $act->verb = ActivityVerb::POST;
         $act->time = time();
@@ -150,6 +174,7 @@ class Activitypub_notice extends Managed_DataObject
 
                     $imagefile = new ImageFile(null, $temp_filename);
                     $filename = hash(File::FILEHASH_ALG, $imgData).image_type_to_extension($imagefile->type);
+
                     unset($imgData);    // No need to carry this in memory.
                     rename($temp_filename, File::path($filename));
                     common_debug('ActivityPub Create Notice: Moved image from: '.$temp_filename.' to '.$filename);
@@ -158,11 +183,9 @@ class Activitypub_notice extends Managed_DataObject
                 } catch (Exception $e) {
                     common_debug('ActivityPub Create Notice: Something went wrong while processing the image from: '.$attach_url.' details: '.$e->getMessage());
                     unlink($temp_filename);
-                    $content .= ($content==='' ? '' : ' ') . $attach_url;
                 }
-            } else {
-                $content .= ($content==='' ? '' : ' ') . $attach_url;
             }
+            $content .= ($content==='' ? '' : ' ') . '<br><a href="'.$attach_url.'">Remote Attachment Source</a>';
         }
 
         // Is this a reply?
@@ -181,12 +204,13 @@ class Activitypub_notice extends Managed_DataObject
         $discovery = new Activitypub_explorer;
 
         // Generate Cc objects
+        $cc_profiles = [];
         if (is_array($cc)) {
             // Remove duplicates from Cc actors set
             array_unique($cc);
             foreach ($cc as $cc_url) {
                 try {
-                    $cc = array_merge($cc, $discovery->lookup($cc_url));
+                    $cc_profiles = array_merge($cc_profiles, $discovery->lookup($cc_url));
                 } catch (Exception $e) {
                     // Invalid actor found, just let it go. // TODO: Fallback to OStatus
                 }
@@ -195,7 +219,7 @@ class Activitypub_notice extends Managed_DataObject
             // No need to do anything else at this point, let's just break out the if
         } else {
             try {
-                $cc = array_merge($cc, $discovery->lookup($cc));
+                $cc_profiles = $discovery->lookup($cc);
             } catch (Exception $e) {
                 // Invalid actor found, just let it go. // TODO: Fallback to OStatus
             }
@@ -203,8 +227,8 @@ class Activitypub_notice extends Managed_DataObject
 
         unset($discovery);
 
-        foreach ($cc as $tp) {
-            $act->context->attention[ActivityPubPlugin::actor_uri($tp)] = 'http://activitystrea.ms/schema/1.0/person';
+        foreach ($cc_profiles as $cp) {
+            $act->context->attention[ActivityPubPlugin::actor_uri($cp)] = 'http://activitystrea.ms/schema/1.0/person';
         }
 
         // Add location if that is set
@@ -224,56 +248,51 @@ class Activitypub_notice extends Managed_DataObject
         // Finally add the activity object to our activity
         $act->objects[] = $actobj;
 
-        try {
-            $note = Notice::saveActivity($act, $actor_profile, $options);
-            if (ActivityPubPlugin::$store_images_from_remote_notes_attachments && isset($mediaFile)) {
-                $mediaFile->attachToNotice($note);
-            }
-            return $note;
-        } catch (Exception $e) {
-            throw $e;
+        $note = Notice::saveActivity($act, $actor_profile, $options);
+        if (ActivityPubPlugin::$store_images_from_remote_notes_attachments && isset($mediaFile)) {
+            $mediaFile->attachToNotice($note);
         }
+        return $note;
     }
 
     /**
-     * Validates a remote notice.
+     * Validates a note.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
-     * @param  Array $data
-     * @return boolean true in case of success
+     * @param  Array $object
      * @throws Exception
      */
-    public static function validate_remote_notice($data)
+    public static function validate_note($object)
     {
-        /*if (!isset($data['attributedTo'])) {
+        if (!isset($object['attributedTo'])) {
             common_debug('ActivityPub Notice Validator: Rejected because attributedTo was not specified.');
             throw new Exception('No attributedTo specified.');
         }
-        if (!isset($data['id'])) {
+        if (!isset($object['id'])) {
             common_debug('ActivityPub Notice Validator: Rejected because Object ID was not specified.');
             throw new Exception('Object ID not specified.');
-        } elseif (!filter_var($data['id'], FILTER_VALIDATE_URL)) {
+        } elseif (!filter_var($object['id'], FILTER_VALIDATE_URL)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object ID is invalid.');
             throw new Exception('Invalid Object ID.');
         }
-        if (!isset($data['type']) || $data['type'] !== 'Note') {
+        if (!isset($object['type']) || $object['type'] !== 'Note') {
             common_debug('ActivityPub Notice Validator: Rejected because of Type.');
             throw new Exception('Invalid Object type.');
         }
-        if (!isset($data['content'])) {
+        if (!isset($object['content'])) {
             common_debug('ActivityPub Notice Validator: Rejected because Content was not specified.');
             throw new Exception('Object content was not specified.');
         }
-        if (!isset($data['url'])) {
+        if (!isset($object['url'])) {
             throw new Exception('Object URL was not specified.');
-        } elseif (!filter_var($data['url'], FILTER_VALIDATE_URL)) {
+        } elseif (!filter_var($object['url'], FILTER_VALIDATE_URL)) {
             common_debug('ActivityPub Notice Validator: Rejected because Object URL is invalid.');
             throw new Exception('Invalid Object URL.');
         }
-        if (!isset($data['cc'])) {
+        if (!isset($object['cc'])) {
             common_debug('ActivityPub Notice Validator: Rejected because Object CC was not specified.');
             throw new Exception('Object CC was not specified.');
-        }*/
+        }
         return true;
     }
 }

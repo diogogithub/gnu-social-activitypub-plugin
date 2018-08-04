@@ -49,10 +49,14 @@ class Activitypub_reject extends Managed_DataObject
      */
     public static function reject_to_array($object)
     {
-        $res = array("@context" => "https://www.w3.org/ns/activitystreams",
-                          "type"   => "Reject",
-                          "object" => $object
-                       );
+        $res = [
+                '@context' => [
+                    'https://www.w3.org/ns/activitystreams',
+                    'https://w3id.org/security/v1'
+                ],
+                "type"   => "Reject",
+                "object" => $object
+        ];
         return $res;
     }
 }

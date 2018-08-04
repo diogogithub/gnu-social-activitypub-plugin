@@ -51,6 +51,10 @@ class Activitypub_mention_tag extends Managed_DataObject
     public static function mention_tag_to_array_from_values($href, $name)
     {
         $res = [
+            '@context' => [
+                    'https://www.w3.org/ns/activitystreams',
+                    'https://w3id.org/security/v1'
+            ],
             "type" => "Mention",
             "href" => $href,
             "name" => $name

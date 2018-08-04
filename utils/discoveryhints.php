@@ -32,9 +32,9 @@ class DiscoveryHints
 {
     public static function fromXRD(XML_XRD $xrd)
     {
-        $hints = array();
+        $hints = [];
 
-        if (Event::handle('StartDiscoveryHintsFromXRD', array($xrd, &$hints))) {
+        if (Event::handle('StartDiscoveryHintsFromXRD', [$xrd, &$hints])) {
             foreach ($xrd->links as $link) {
                 switch ($link->rel) {
                 case WebFingerResource_Profile::PROFILEPAGE:
@@ -55,7 +55,7 @@ class DiscoveryHints
                     break;
                 }
             }
-            Event::handle('EndDiscoveryHintsFromXRD', array($xrd, &$hints));
+            Event::handle('EndDiscoveryHintsFromXRD', [$xrd, &$hints]);
         }
 
         return $hints;
@@ -88,10 +88,10 @@ class DiscoveryHints
         $hcard = self::_hcard($body, $url);
 
         if (empty($hcard)) {
-            return array();
+            return [];
         }
 
-        $hints = array();
+        $hints = [];
 
         // XXX: don't copy stuff into an array and then copy it again
 
@@ -131,7 +131,7 @@ class DiscoveryHints
             return null;
         }
 
-        $hcards = array();
+        $hcards = [];
 
         foreach ($mf2['items'] as $item) {
             if (!in_array('h-card', $item['type'])) {

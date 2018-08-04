@@ -105,7 +105,7 @@ class Activitypub_profile extends Managed_DataObject
             'following'         => common_local_url("apActorFollowing", array("id" => $id)),
             'followers'         => common_local_url("apActorFollowers", array("id" => $id)),
             'liked'             => common_local_url("apActorLiked", array("id" => $id)),
-            'inbox'             => common_local_url("apActorInbox", array("id" => $id)),
+            'inbox'             => common_local_url("apInbox", array("id" => $id)),
             'preferredUsername' => $profile->getNickname(),
             'name'              => $profile->getBestName(),
             'summary'           => ($desc = $profile->getDescription()) == null ? "" : $desc,
@@ -128,7 +128,7 @@ class Activitypub_profile extends Managed_DataObject
         ];
 
         if ($profile->isLocal()) {
-            $res['endpoints']['sharedInbox'] = common_local_url('apSharedInbox');
+            $res['endpoints']['sharedInbox'] = common_local_url('apInbox');
         } else {
             $aprofile = new Activitypub_profile();
             $aprofile = $aprofile->from_profile($profile);
