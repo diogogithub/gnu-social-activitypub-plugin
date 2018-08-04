@@ -67,7 +67,7 @@ class apActorProfileAction extends ManagedAction
         }
 
         if (!$profile->isLocal()) {
-            ActivityPubReturn::error("This is not a local user.");
+            ActivityPubReturn::error("This is not a local user.", 403);
         }
 
         $res = Activitypub_profile::profile_to_array($profile);

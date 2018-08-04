@@ -53,13 +53,13 @@ class apActorLikedAction extends ManagedAction
     {
         try {
             $profile = Profile::getByID($this->trimmed('id'));
-            $url     = ActivityPubPlugin::actor_url($profile);
+            $profile_id = $profile->getID();
         } catch (Exception $e) {
             ActivityPubReturn::error('Invalid Actor URI.', 404);
         }
 
         if (!$profile->isLocal()) {
-            ActivityPubReturn::error("This is not a local user.");
+            ActivityPubReturn::error("This is not a local user.", 403);
         }
 
         $limit    = intval($this->trimmed('limit'));
@@ -75,7 +75,7 @@ class apActorLikedAction extends ManagedAction
             $limit = 80;
         }
 
-        $fave = $this->fetch_faves($profile->getID(), $limit, $since_id, $max_id);
+        $fave = $this->fetch_faves($profile_id, $limit, $since_id, $max_id);
 
         $faves = array();
         while ($fave->fetch()) {
@@ -83,17 +83,15 @@ class apActorLikedAction extends ManagedAction
         }
 
         $res = [
-                  '@context'          => [
-                    "https://www.w3.org/ns/activitystreams",
-                    [
-                      "@language" => "en"
-                    ]
-                  ],
-                  'id'           => "{$url}/liked.json",
-                  'type'         => 'OrderedCollection',
-                  'totalItems'   => Fave::countByProfile($profile),
-                  'orderedItems' => $faves
-                ];
+            '@context'     => [
+              "https://www.w3.org/ns/activitystreams",
+              "https://w3id.org/security/v1",
+            ],
+            'id'           => common_local_url('apActorLiked', ['id' => $profile_id]),
+            'type'         => 'OrderedCollection',
+            'totalItems'   => Fave::countByProfile($profile),
+            'orderedItems' => $faves
+        ];
 
         ActivityPubReturn::answer($res);
     }
@@ -130,7 +128,7 @@ class apActorLikedAction extends ManagedAction
             $user_id,
             $limit = 40,
             $since_id = null,
-                                             $max_id = null
+            $max_id = null
         ) {
         $fav = new Fave();
 

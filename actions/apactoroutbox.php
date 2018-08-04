@@ -30,7 +30,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 /**
- * Actor's Followers Collection
+ * Inbox Request Handler
  *
  * @category  Plugin
  * @package   GNUsocial
@@ -38,16 +38,15 @@ if (!defined('GNUSOCIAL')) {
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      http://www.gnu.org/software/social/
  */
-class apActorFollowersAction extends ManagedAction
+class apActorOutboxAction extends ManagedAction
 {
     protected $needLogin = false;
     protected $canPost   = true;
 
     /**
-     * Handle the Followers Collection request
+     * Handle the Outbox request
      *
-     * @author Diogo Cordeiro <diogo@fc.up.pt>
-     * @return void
+     * @author Daniel Supernault <danielsupernault@gmail.com>
      */
     protected function handle()
     {
@@ -76,31 +75,31 @@ class apActorFollowersAction extends ManagedAction
         $limit = (($page - 1) == 0 ? 1 : $page) * PROFILES_PER_MINILIST;
 
         /* Calculate total items */
-        $total_subs  = $profile->subscriberCount();
-        $total_pages = ceil($total_subs / PROFILES_PER_MINILIST);
+        $total_notes = $profile->noticeCount();
+        $total_pages = ceil($total_notes / PROFILES_PER_MINILIST);
 
         $res = [
             '@context'     => [
               "https://www.w3.org/ns/activitystreams",
               "https://w3id.org/security/v1",
             ],
-            'id'           => common_local_url('apActorFollowers', ['id' => $profile_id]).(($page != 0) ? '?page='.$page : ''),
+            'id'           => common_local_url('apActorOutbox', ['id' => $profile_id]).(($page != 0) ? '?page='.$page : ''),
             'type'         => ($page == 0 ? 'OrderedCollection' : 'OrderedCollectionPage'),
-            'totalItems'   => $total_subs
+            'totalItems'   => $total_notes
         ];
 
         if ($page == 0) {
-            $res['first'] = common_local_url('apActorFollowers', ['id' => $profile_id]).'?page=1';
+            $res['first'] = common_local_url('apActorOutbox', ['id' => $profile_id]).'?page=1';
         } else {
-            $res['orderedItems'] = $this->generate_followers($profile, $since, $limit);
-            $res['partOf'] = common_local_url('apActorFollowers', ['id' => $profile_id]);
+            $res['orderedItems'] = $this->generate_outbox($profile);
+            $res['partOf'] = common_local_url('apActorOutbox', ['id' => $profile_id]);
 
             if ($page+1 < $total_pages) {
-                $res['next'] = common_local_url('apActorFollowers', ['id' => $profile_id]).'page='.($page+1 == 1 ? 2 : $page+1);
+                $res['next'] = common_local_url('apActorOutbox', ['id' => $profile_id]).'page='.($page+1 == 1 ? 2 : $page+1);
             }
 
             if ($page > 1) {
-                $res['prev'] = common_local_url('apActorFollowers', ['id' => $profile_id]).'?page='.($page-1 <= 0 ? 1 : $page-1);
+                $res['prev'] = common_local_url('apActorOutbox', ['id' => $profile_id]).'?page='.($page-1 <= 0 ? 1 : $page-1);
             }
         }
 
@@ -108,28 +107,26 @@ class apActorFollowersAction extends ManagedAction
     }
 
     /**
-     * Generates a list of followers for a given profile.
+     * Generates a list of people following given profile.
      *
-     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @author Daniel Supernault <danielsupernault@gmail.com>
      * @param Profile $profile
-     * @param int32 $since
-     * @param int32 $limit
-     * @return Array of URIs
+     * @return Array of Notices
      */
-    public function generate_followers($profile, $since, $limit)
+    public function generate_outbox($profile)
     {
-        /* Fetch Followers */
-        try {
-            $sub = $profile->getSubscribers($since, $limit);
-        } catch (NoResultException $e) {
-            // Just let the exception go on its merry way
+        /* Fetch Notices */
+        $notices = [];
+        $notice = $profile->getNotices();
+        while ($notice->fetch()) {
+            $note = $notice;
+
+            // TODO: Handle other types
+            if ($note->object_type == 'http://activitystrea.ms/schema/1.0/note') {
+                $notices[] = Activitypub_notice::notice_to_array($note);
+            }
         }
 
-        /* Get followers' URLs */
-        $subs = [];
-        while ($sub->fetch()) {
-            $subs[] = ActivityPubPlugin::actor_uri($sub);
-        }
-        return $subs;
+        return $notices;
     }
 }

@@ -59,7 +59,7 @@ class apActorFollowingAction extends ManagedAction
         }
 
         if (!$profile->isLocal()) {
-            ActivityPubReturn::error("This is not a local user.");
+            ActivityPubReturn::error("This is not a local user.", 403);
         }
 
         if (!isset($_GET["page"])) {
@@ -75,22 +75,9 @@ class apActorFollowingAction extends ManagedAction
         $since = ($page - 1) * PROFILES_PER_MINILIST;
         $limit = (($page - 1) == 0 ? 1 : $page) * PROFILES_PER_MINILIST;
 
-        /* Fetch Following */
-        try {
-            $sub = $profile->getSubscribed($since, $limit);
-        } catch (NoResultException $e) {
-            // Just let the exception go on its merry way
-        }
-
         /* Calculate total items */
         $total_subs  = $profile->subscriptionCount();
         $total_pages = ceil($total_subs / PROFILES_PER_MINILIST);
-
-        /* Get followed' URLs */
-        $subs = array();
-        while ($sub->fetch()) {
-            $subs[] = ActivityPubPlugin::actor_uri($sub);
-        }
 
         $res = [
             '@context'     => [
@@ -99,13 +86,13 @@ class apActorFollowingAction extends ManagedAction
             ],
             'id'           => common_local_url('apActorFollowing', ['id' => $profile_id]).(($page != 0) ? '?page='.$page : ''),
             'type'         => ($page == 0 ? 'OrderedCollection' : 'OrderedCollectionPage'),
-            'totalItems'   => $total_subs,
-            'orderedItems' => $subs
+            'totalItems'   => $total_subs
         ];
 
         if ($page == 0) {
             $res['first'] = common_local_url('apActorFollowing', ['id' => $profile_id]).'?page=1';
         } else {
+            $res['orderedItems'] = $this->generate_following($profile, $since, $limit);
             $res['partOf'] = common_local_url('apActorFollowing', ['id' => $profile_id]);
 
             if ($page+1 < $total_pages) {
@@ -118,5 +105,31 @@ class apActorFollowingAction extends ManagedAction
         }
 
         ActivityPubReturn::answer($res);
+    }
+
+    /**
+     * Generates a list of people following given profile.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param Profile $profile
+     * @param int32 $since
+     * @param int32 $limit
+     * @return Array of URIs
+     */
+    public function generate_following($profile, $since, $limit)
+    {
+        /* Fetch Following */
+        try {
+            $sub = $profile->getSubscribed($since, $limit);
+        } catch (NoResultException $e) {
+            // Just let the exception go on its merry way
+        }
+
+        /* Get followed' URLs */
+        $subs = [];
+        while ($sub->fetch()) {
+            $subs[] = ActivityPubPlugin::actor_uri($sub);
+        }
+        return $subs;
     }
 }
