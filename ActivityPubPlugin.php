@@ -185,6 +185,12 @@ class ActivityPubPlugin extends Plugin
                 );
 
         $m->connect(
+            'user/:id/outbox.json',
+                    ['action' => 'apActorOutbox'],
+                    ['id' => '[0-9]+']
+                );
+
+        $m->connect(
             'inbox.json',
                     ['action' => 'apInbox']
                 );

@@ -58,7 +58,7 @@ class apNoticeAction extends ManagedAction
         }
 
         if (!$notice->isLocal()) {
-            ActivityPubReturn::error("This is not a local notice.");
+            ActivityPubReturn::error("This is not a local notice.", 403);
         }
 
         $res = Activitypub_notice::notice_to_array($notice);
