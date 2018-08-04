@@ -55,7 +55,7 @@ class Activitypub_create extends Managed_DataObject
                     'https://www.w3.org/ns/activitystreams',
                     'https://w3id.org/security/v1'
             ],
-            'id'     => $object.'/create',
+            'id'     => $object['id'].'/create',
             'type'   => 'Create',
             'to'     => $object['to'],
             'cc'     => $object['cc'],
