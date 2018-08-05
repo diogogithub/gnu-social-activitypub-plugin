@@ -64,6 +64,7 @@ class Activitypub_postman
     {
         $this->actor = $from;
         $this->to = $to;
+        $this->to[]= common_local_url('apActorFollowers', ['id' => $from->getID()]);
         $this->actor_uri = ActivityPubPlugin::actor_uri($this->actor);
 
         $actor_private_key = new Activitypub_rsa();
@@ -75,7 +76,6 @@ class Activitypub_postman
             'headers' => ['(request-target)', 'date', 'content-type', 'accept', 'user-agent'],
         ]);
 
-        $this->to = $to;
         $this->headers = [
             'content-type' => 'application/activity+json',
             'accept'       => 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',

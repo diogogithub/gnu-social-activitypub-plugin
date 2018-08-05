@@ -124,7 +124,6 @@ class Activitypub_notice extends Managed_DataObject
         $id      = $object['id'];         // int32
         $url     = $object['url'];        // string
         $content = $object['content'];    // string
-        $cc      = $object['cc'];         // array|string
 
         // possible keys: ['inReplyTo', 'latitude', 'longitude', 'attachment']
         $settings = [];
@@ -201,34 +200,28 @@ class Activitypub_notice extends Managed_DataObject
             $inReplyTo = null;
         }
 
-        $discovery = new Activitypub_explorer;
-
-        // Generate Cc objects
-        $cc_profiles = [];
-        if (is_array($cc)) {
-            // Remove duplicates from Cc actors set
-            array_unique($cc);
-            foreach ($cc as $cc_url) {
-                try {
-                    $cc_profiles = array_merge($cc_profiles, $discovery->lookup($cc_url));
-                } catch (Exception $e) {
-                    // Invalid actor found, just let it go. // TODO: Fallback to OStatus
+        // Mentions
+        $mentions = [];
+        if (isset ($object['tag']) && is_array($object['tag'])) {
+            foreach ($object['tag'] as $tag) {
+                if ($tag['type'] == 'Mention') {
+                    $mentions[] = $tag['href'];
                 }
             }
-        } elseif (empty($cc) || in_array($cc, ACTIVITYPUB_PUBLIC_TO)) {
-            // No need to do anything else at this point, let's just break out the if
-        } else {
+        }
+        $mentions_profiles = [];
+        $discovery = new Activitypub_explorer;
+        foreach ($mentions as $mention) {
             try {
-                $cc_profiles = $discovery->lookup($cc);
+                $mentions_profiles[] = array_merge($mentions_profiles, $discovery->lookup($mention));
             } catch (Exception $e) {
                 // Invalid actor found, just let it go. // TODO: Fallback to OStatus
             }
         }
-
         unset($discovery);
 
-        foreach ($cc_profiles as $cp) {
-            $act->context->attention[ActivityPubPlugin::actor_uri($cp)] = 'http://activitystrea.ms/schema/1.0/person';
+        foreach ($mentions_profiles as $mp) {
+            $act->context->attention[ActivityPubPlugin::actor_uri($mp)] = 'http://activitystrea.ms/schema/1.0/person';
         }
 
         // Add location if that is set
