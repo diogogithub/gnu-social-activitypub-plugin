@@ -202,7 +202,7 @@ class Activitypub_notice extends Managed_DataObject
 
         // Mentions
         $mentions = [];
-        if (isset ($object['tag']) && is_array($object['tag'])) {
+        if (isset($object['tag']) && is_array($object['tag'])) {
             foreach ($object['tag'] as $tag) {
                 if ($tag['type'] == 'Mention') {
                     $mentions[] = $tag['href'];

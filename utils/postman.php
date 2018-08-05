@@ -63,15 +63,22 @@ class Activitypub_postman
     public function __construct($from, $to = [])
     {
         $this->actor = $from;
-        $this->to = $to;
-        $this->to[]= common_local_url('apActorFollowers', ['id' => $from->getID()]);
+        $discovery = new Activitypub_explorer();
+        $this->to = array_merge(
+                $to,
+                $discovery->lookup(common_local_url(
+                    'apActorFollowers',
+                    ['id' => $from->getID()]
+                ))
+        );
+        unset($discovery);
         $this->actor_uri = ActivityPubPlugin::actor_uri($this->actor);
 
         $actor_private_key = new Activitypub_rsa();
         $actor_private_key = $actor_private_key->get_private_key($this->actor);
 
         $context = new Context([
-            'keys' => [$this->actor_uri."#public-key" => $actor_private_key],
+            'keys' => [$this->actor_uri.'#public-key' => $actor_private_key],
             'algorithm' => 'rsa-sha256',
             'headers' => ['(request-target)', 'date', 'content-type', 'accept', 'user-agent'],
         ]);

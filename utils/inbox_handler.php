@@ -49,8 +49,9 @@ class Activitypub_inbox_handler
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Array $activity Activity we are receiving
+     * @param Profile $actor_profile Actor originating the activity
      */
-    public function __construct($activity)
+    public function __construct($activity, $actor_profile = null)
     {
         $this->activity = $activity;
         $this->object = $activity['object'];
@@ -59,7 +60,11 @@ class Activitypub_inbox_handler
         $this->validate_activity();
 
         // Get Actor's Profile
-        $this->actor = ActivityPub_explorer::get_profile_from_url($this->activity['actor']);
+        if (!is_null($actor_profile)) {
+            $this->actor = $actor_profile;
+        } else {
+            $this->actor = ActivityPub_explorer::get_profile_from_url($this->activity['actor']);
+        }
 
         // Handle the Activity
         $this->process();
