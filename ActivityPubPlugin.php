@@ -30,7 +30,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 // Ensure proper timezone
-date_default_timezone_set('UTC');
+date_default_timezone_set('GMT');
 
 // Import required files by the plugin
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';

@@ -80,7 +80,7 @@ class Activitypub_postman
             'content-type' => 'application/activity+json',
             'accept'       => 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
             'user-agent'   => 'GNUSocialBot v0.1 - https://gnu.io/social',
-            'date'         => date('D, d M Y h:i:s') . ' GMT'
+            'date'         => gmdate('D, d M Y H:i:s \G\M\T', time())
         ];
 
         $handlerStack = GuzzleHttpSignatures::defaultHandlerFromContext($context);
