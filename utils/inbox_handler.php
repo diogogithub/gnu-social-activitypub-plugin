@@ -103,7 +103,7 @@ class Activitypub_inbox_handler
             case 'Like':
             case 'Announce':
                 if (!filter_var($this->object, FILTER_VALIDATE_URL)) {
-                    throw new Exception("Object is not a valid Object URI for Activity.");
+                    throw new Exception('Object is not a valid Object URI for Activity.');
                 }
                 break;
             case 'Undo':

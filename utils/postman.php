@@ -63,15 +63,19 @@ class Activitypub_postman
     public function __construct($from, $to = [])
     {
         $this->actor = $from;
+
         $discovery = new Activitypub_explorer();
-        $this->to = array_merge(
-                $to,
-                $discovery->lookup(common_local_url(
-                    'apActorFollowers',
-                    ['id' => $from->getID()]
-                ))
-        );
+        $this->to = $to;
+        $followers = apActorFollowersAction::generate_followers($this->actor, 0, null);
+        foreach ($followers as $sub) {
+            try {
+            $to[]= Activitypub_profile::from_profile($discovery->lookup($sub)[0]);
+            } catch (Exception $e) {
+                // Not an ActivityPub Remote Follower, let it go
+            }
+        }
         unset($discovery);
+
         $this->actor_uri = ActivityPubPlugin::actor_uri($this->actor);
 
         $actor_private_key = new Activitypub_rsa();

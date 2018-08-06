@@ -73,7 +73,7 @@ class Activitypub_notice extends Managed_DataObject
 
         $item = [
             '@context' => 'https://www.w3.org/ns/activitystreams',
-            'id'           => $notice->getUrl(),
+            'id'           => common_local_url('apNotice', ['id' => $notice->getID()]),
             'type'         => 'Note',
             'published'    => str_replace(' ', 'T', $notice->getCreated()).'Z',
             'url'          => $notice->getUrl(),
@@ -210,7 +210,7 @@ class Activitypub_notice extends Managed_DataObject
         $discovery = new Activitypub_explorer;
         foreach ($mentions as $mention) {
             try {
-                $mentions_profiles[] = array_merge($mentions_profiles, $discovery->lookup($mention));
+                $mentions_profiles[] = $discovery->lookup($mention)[0];
             } catch (Exception $e) {
                 // Invalid actor found, just let it go. // TODO: Fallback to OStatus
             }
