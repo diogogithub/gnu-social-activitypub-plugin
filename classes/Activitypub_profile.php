@@ -96,10 +96,7 @@ class Activitypub_profile extends Managed_DataObject
         $public_key = $rsa->ensure_public_key($profile);
         unset($rsa);
         $res = [
-            '@context' => [
-                "https://www.w3.org/ns/activitystreams",
-                "https://w3id.org/security/v1"
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             'id'                => $uri,
             'type'              => 'Person',
             'following'         => common_local_url('apActorFollowing', ['id' => $id]),

@@ -51,10 +51,7 @@ class Activitypub_create extends Managed_DataObject
     public static function create_to_array($actor, $object)
     {
         $res = [
-            '@context' => [
-                    'https://www.w3.org/ns/activitystreams',
-                    'https://w3id.org/security/v1'
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             'id'     => $object['id'].'/create',
             'type'   => 'Create',
             'to'     => $object['to'],

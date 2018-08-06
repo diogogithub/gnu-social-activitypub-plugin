@@ -50,10 +50,7 @@ class Activitypub_tag extends Managed_DataObject
     public static function tag_to_array($tag)
     {
         $res = [
-            '@context' => [
-                    'https://www.w3.org/ns/activitystreams',
-                    'https://w3id.org/security/v1'
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             'name' => $tag,
             'url'  => common_local_url('tag', ['tag' => $tag])
         ];

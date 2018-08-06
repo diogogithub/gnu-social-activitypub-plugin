@@ -50,10 +50,7 @@ class Activitypub_announce extends Managed_DataObject
     public static function announce_to_array($actor, $object)
     {
         $res = [
-            '@context' => [
-                    'https://www.w3.org/ns/activitystreams',
-                    'https://w3id.org/security/v1'
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             "type"   => "Announce",
             "actor"  => $actor,
             "object" => $object

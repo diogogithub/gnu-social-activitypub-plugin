@@ -50,10 +50,7 @@ class Activitypub_attachment extends Managed_DataObject
     public static function attachment_to_array($attachment)
     {
         $res = [
-            '@context' => [
-                    'https://www.w3.org/ns/activitystreams',
-                    'https://w3id.org/security/v1'
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             'type'      => 'Document',
             'mediaType' => $attachment->mimetype,
             'url'       => $attachment->getUrl(),

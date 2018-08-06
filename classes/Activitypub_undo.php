@@ -50,10 +50,7 @@ class Activitypub_undo extends Managed_DataObject
     public static function undo_to_array($object)
     {
         $res = [
-            '@context' => [
-                    'https://www.w3.org/ns/activitystreams',
-                    'https://w3id.org/security/v1'
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             'id'     => $object['id'].'/undo',
             'type'   => 'Undo',
             'actor'  => $object['actor'],

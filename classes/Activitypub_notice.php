@@ -72,10 +72,7 @@ class Activitypub_notice extends Managed_DataObject
         $to[]= 'https://www.w3.org/ns/activitystreams#Public';
 
         $item = [
-            '@context' => [
-                    'https://www.w3.org/ns/activitystreams',
-                    'https://w3id.org/security/v1'
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             'id'           => $notice->getUrl(),
             'type'         => 'Note',
             'published'    => str_replace(' ', 'T', $notice->getCreated()).'Z',

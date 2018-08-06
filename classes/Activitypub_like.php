@@ -51,10 +51,7 @@ class Activitypub_like extends Managed_DataObject
     public static function like_to_array($actor, $object)
     {
         $res = [
-            '@context' => [
-                    'https://www.w3.org/ns/activitystreams',
-                    'https://w3id.org/security/v1'
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             'id'     => common_root_url().'like_from_'.urlencode($actor).'_to_'.urlencode($object),
             "type"   => "Like",
             "actor"  => $actor,
