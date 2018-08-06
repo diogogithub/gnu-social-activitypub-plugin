@@ -214,8 +214,7 @@ class ActivityPubPlugin extends Plugin
     }
 
     /**
-     * Dummy string on AccountProfileBlock stating that ActivityPub is active
-     * this is more of a placeholder for eventual useful stuff ._.
+     * Adds an indicator on Remote ActivityPub profiles.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @return boolean hook return value
@@ -226,7 +225,7 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
         try {
-            $aprofile = Activitypub_profile::getKV('profile_id', $profile->id);
+            $aprofile = Activitypub_profile::from_profile($profile);
         } catch (Exception $e) {
             // Not a remote ActivityPub_profile! Maybe some other network
             // that has imported a non-local user (e.g.: OStatus)?
