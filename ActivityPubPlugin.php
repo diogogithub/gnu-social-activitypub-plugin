@@ -793,24 +793,6 @@ class ActivityPubPlugin extends Plugin
             }
         }
 
-        // Is an Announce?
-        if ($notice->isRepeat()) {
-            $repeated_notice = Notice::getKV('id', $notice->repeat_of);
-            if ($repeated_notice instanceof Notice) {
-                try {
-                    $other[] = Activitypub_profile::from_profile($repeated_notice->getProfile());
-                } catch (Exception $e) {
-                    // Local user can be ignored
-                }
-
-                $postman = new Activitypub_postman($profile, $other);
-
-                // That was it
-                $postman->announce($repeated_notice);
-                return true;
-            }
-        }
-
         // Is a reply?
         if ($notice->reply_to) {
             try {
@@ -834,13 +816,26 @@ class ActivityPubPlugin extends Plugin
             }
         }
 
-        // That was it
-        try {
-            $postman = new Activitypub_postman($profile, $other);
-            $postman->create_note($notice);
-        } catch (Exception $e) {
-            // Let another plugin handle this instead.
+        // Is an Announce?
+        if ($notice->isRepeat()) {
+            $repeated_notice = Notice::getKV('id', $notice->repeat_of);
+            if ($repeated_notice instanceof Notice) {
+                try {
+                    $other[] = Activitypub_profile::from_profile($repeated_notice->getProfile());
+                } catch (Exception $e) {
+                    // Local user can be ignored
+                }
+
+                // That was it
+                $postman = new Activitypub_postman($profile, $other);
+                $postman->announce($repeated_notice);
+                return true;
+            }
         }
+
+        // That was it
+        $postman = new Activitypub_postman($profile, $other);
+        $postman->create_note($notice);
         return true;
     }
 
