@@ -226,7 +226,7 @@ class ActivityPubPlugin extends Plugin
         }
         try {
             $aprofile = Activitypub_profile::getKV('profile_id', $profile->id);
-        } catch (NoResultException $e) {
+        } catch (Exception $e) {
             // Not a remote ActivityPub_profile! Maybe some other network
             // that has imported a non-local user (e.g.: OStatus)?
             return true;
