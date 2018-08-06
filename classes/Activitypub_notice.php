@@ -90,7 +90,7 @@ class Activitypub_notice extends Managed_DataObject
 
         // Is this a reply?
         if (!empty($notice->reply_to)) {
-            $item['inReplyTo'] = Notice::getById($notice->reply_to)->getUrl();
+            $item['inReplyTo'] = common_local_url('apNotice', ['id' => $notice->getID()]);
             $item['inReplyToAtomUri'] = Notice::getById($notice->reply_to)->getUrl();
         }
 
