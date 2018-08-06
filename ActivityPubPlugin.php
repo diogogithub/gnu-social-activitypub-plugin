@@ -151,49 +151,48 @@ class ActivityPubPlugin extends Plugin
                 ['nickname' => Nickname::DISPLAY_FMT],
                 'apActorProfile'
             );
-
-            ActivityPubURLMapperOverwrite::variable(
-                $m,
-                'notice/:id',
-                ['id'     => '[0-9]+'],
-                'apNotice'
-            );
         }
 
         $m->connect(
+            'note/:id.json',
+            ['action' => 'apNotice'],
+            ['id'     => '[0-9]+']
+        );
+
+        $m->connect(
             'user/:id/liked.json',
-                    ['action'    => 'apActorLiked'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apActorLiked'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'user/:id/followers.json',
-                    ['action'    => 'apActorFollowers'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apActorFollowers'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'user/:id/following.json',
-                    ['action'    => 'apActorFollowing'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apActorFollowing'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'user/:id/inbox.json',
-                    ['action' => 'apInbox'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apInbox'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'user/:id/outbox.json',
-                    ['action' => 'apActorOutbox'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apActorOutbox'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'inbox.json',
-                    ['action' => 'apInbox']
-                );
+            ['action' => 'apInbox']
+        );
     }
 
     /**
@@ -278,7 +277,7 @@ class ActivityPubPlugin extends Plugin
         }
 
         // Look for profile URLs, with or without scheme:
-        $urls = array();
+        $urls = [];
         if (preg_match('!^https?://((?:\w+\.)*\w+(?:\w+\-\w+)*\.\w+(?:/\w+)+)$!', $arg)) {
             $urls[] = $arg;
         }
@@ -336,7 +335,7 @@ class ActivityPubPlugin extends Plugin
      */
     public static function extractUrlMentions($text, $preMention='@')
     {
-        $wmatches = array();
+        $wmatches = [];
         // In the regexp below we need to match / _before_ URL_REGEX_VALID_PATH_CHARS because it otherwise gets merged
         // with the TLD before (but / is in URL_REGEX_VALID_PATH_CHARS anyway, it's just its positioning that is important)
         $result = preg_match_all(
@@ -386,7 +385,7 @@ class ActivityPubPlugin extends Plugin
      */
     public function onEndFindMentions(Profile $sender, $text, &$mentions)
     {
-        $matches = array();
+        $matches = [];
 
         foreach (self::extractWebfingerIds($text, '@') as $wmatch) {
             list($target, $pos) = $wmatch;
@@ -547,7 +546,7 @@ class ActivityPubPlugin extends Plugin
         try {
             $other = Activitypub_profile::from_profile($other);
         } catch (Exception $e) {
-            return true;
+            return true; // Let other plugin handle this instead
         }
 
         $postman = new Activitypub_postman($profile, array($other));
@@ -574,7 +573,7 @@ class ActivityPubPlugin extends Plugin
         try {
             $other = Activitypub_profile::from_profile($other);
         } catch (Exception $e) {
-            return true;
+            return true; // Let other plugin handle this instead
         }
 
         $postman = new Activitypub_postman($profile, array($other));
@@ -585,7 +584,7 @@ class ActivityPubPlugin extends Plugin
     }
 
     /**
-     * Notify remote users when their notices get favorited.
+     * Notify remote users when their notices get favourited.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $profile of local user doing the faving
@@ -600,7 +599,7 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
 
-        $other = array();
+        $other = [];
         try {
             $other[] = Activitypub_profile::from_profile($notice->getProfile());
         } catch (Exception $e) {
@@ -644,7 +643,7 @@ class ActivityPubPlugin extends Plugin
     }
 
     /**
-     * Notify remote users when their notices get de-favorited.
+     * Notify remote users when their notices get de-favourited.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $profile of local user doing the de-faving
@@ -659,7 +658,7 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
 
-        $other = array();
+        $other = [];
         try {
             $other[] = Activitypub_profile::from_profile($notice->getProfile());
         } catch (Exception $e) {
@@ -718,7 +717,7 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
 
-        $other = array();
+        $other = [];
 
         foreach ($notice->getAttentionProfiles() as $to_profile) {
             try {
@@ -771,7 +770,7 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
 
-        $other = array();
+        $other = [];
         try {
             $other[] = Activitypub_profile::from_profile($notice->getProfile());
         } catch (Exception $e) {

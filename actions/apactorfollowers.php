@@ -116,7 +116,7 @@ class apActorFollowersAction extends ManagedAction
      * @param int32 $limit
      * @return Array of URIs
      */
-    public function generate_followers($profile, $since, $limit)
+    public static function generate_followers($profile, $since, $limit)
     {
         /* Fetch Followers */
         try {
@@ -130,6 +130,7 @@ class apActorFollowersAction extends ManagedAction
         while ($sub->fetch()) {
             $subs[] = ActivityPubPlugin::actor_uri($sub);
         }
+
         return $subs;
     }
 }
