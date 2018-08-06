@@ -108,7 +108,7 @@ class apActorFollowingAction extends ManagedAction
     }
 
     /**
-     * Generates a list of people following given profile.
+     * Generates the list of those a given profile is stalking.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $profile

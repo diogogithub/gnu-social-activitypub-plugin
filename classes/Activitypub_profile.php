@@ -243,7 +243,7 @@ class Activitypub_profile extends Managed_DataObject
         $inboxes = Activitypub_explorer::get_actor_inboxes_uri($url);
 
         if ($inboxes == null) {
-            throw new Exception ('This is not an ActivityPub user thus AProfile is politely refusing to proceed.');
+            throw new Exception('This is not an ActivityPub user thus AProfile is politely refusing to proceed.');
         }
 
         $aprofile->created = $aprofile->modified = common_sql_now();

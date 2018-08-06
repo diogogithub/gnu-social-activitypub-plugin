@@ -68,7 +68,7 @@ class Activitypub_postman
         $followers = apActorFollowersAction::generate_followers($this->actor, 0, null);
         foreach ($followers as $sub) {
             try {
-            $to[]= Activitypub_profile::from_profile($discovery->lookup($sub)[0]);
+                $to[]= Activitypub_profile::from_profile($discovery->lookup($sub)[0]);
             } catch (Exception $e) {
                 // Not an ActivityPub Remote Follower, let it go
             }

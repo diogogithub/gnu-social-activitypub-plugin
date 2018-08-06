@@ -108,7 +108,7 @@ class apActorFollowersAction extends ManagedAction
     }
 
     /**
-     * Generates a list of followers for a given profile.
+     * Generates a list of stalkers for a given profile.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $profile
