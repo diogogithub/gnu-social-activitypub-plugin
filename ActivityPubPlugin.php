@@ -765,27 +765,35 @@ class ActivityPubPlugin extends Plugin
     {
         assert($notice->id > 0);        // Ignore if not a valid notice
 
-        $profile = Profile::getKV($notice->profile_id);
+        $profile = $notice->getProfile();
 
         if (!$profile->isLocal()) {
             return true;
         }
 
-        $other = [];
-        try {
-            $other[] = Activitypub_profile::from_profile($notice->getProfile());
-        } catch (Exception $e) {
-            // Local user can be ignored
+        // Ignore for activity/non-post-verb notices
+        if (method_exists('ActivityUtils', 'compareVerbs')) {
+            $is_post_verb = ActivityUtils::compareVerbs(
+                            $notice->verb,
+                            [ActivityVerb::POST]
+                        );
+        } else {
+            $is_post_verb = ($notice->verb == ActivityVerb::POST ? true : false);
         }
-        foreach ($notice->getAttentionProfiles() as $to_profile) {
+        if ($notice->source == 'activity' || !$is_post_verb) {
+            return true;
+        }
+
+        $other = [];
+        foreach ($notice->getAttentionProfiles() as $mention) {
             try {
-                $other[] = Activitypub_profile::from_profile($to_profile);
+                $other[] = Activitypub_profile::from_profile($mention);
             } catch (Exception $e) {
                 // Local user can be ignored
             }
         }
 
-        // Is Announce
+        // Is an Announce?
         if ($notice->isRepeat()) {
             $repeated_notice = Notice::getKV('id', $notice->repeat_of);
             if ($repeated_notice instanceof Notice) {
@@ -803,20 +811,7 @@ class ActivityPubPlugin extends Plugin
             }
         }
 
-        // Ignore for activity/non-post-verb notices
-        if (method_exists('ActivityUtils', 'compareVerbs')) {
-            $is_post_verb = ActivityUtils::compareVerbs(
-                            $notice->verb,
-                            [ActivityVerb::POST]
-                        );
-        } else {
-            $is_post_verb = ($notice->verb == ActivityVerb::POST ? true : false);
-        }
-        if ($notice->source == 'activity' || !$is_post_verb) {
-            return true;
-        }
-
-        // Create
+        // Is a reply?
         if ($notice->reply_to) {
             try {
                 $other[] = Activitypub_profile::from_profile($notice->getParent()->getProfile());
@@ -824,10 +819,9 @@ class ActivityPubPlugin extends Plugin
                 // Local user can be ignored
             }
             try {
-                $mentions = $notice->getParent()->getAttentionProfiles();
-                foreach ($mentions as $to_profile) {
+                foreach ($notice->getParent()->getAttentionProfiles() as $mention) {
                     try {
-                        $other[] = Activitypub_profile::from_profile($to_profile);
+                        $other[] = Activitypub_profile::from_profile($mention);
                     } catch (Exception $e) {
                         // Local user can be ignored
                     }
@@ -839,10 +833,14 @@ class ActivityPubPlugin extends Plugin
                 common_log(LOG_ERR, "Parent notice's author not found: ".$e->getMessage());
             }
         }
-        $postman = new Activitypub_postman($profile, $other);
 
         // That was it
-        $postman->create_note($notice);
+        try {
+            $postman = new Activitypub_postman($profile, $other);
+            $postman->create_note($notice);
+        } catch (Exception $e) {
+            // Let another plugin handle this instead.
+        }
         return true;
     }
 

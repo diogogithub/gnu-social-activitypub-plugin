@@ -60,10 +60,13 @@ class Activitypub_postman
      * @param Profile $from Profile of sender
      * @param Array of Activitypub_profile $to destinataries
      */
-    public function __construct($from, $to = [])
+    public function __construct($from, $to)
     {
         $this->actor = $from;
 
+        if (empty ($to)) {
+            throw new Exception ('You can not summon up a postman without recipients!');
+        }
         $discovery = new Activitypub_explorer();
         $this->to = $to;
         $followers = apActorFollowersAction::generate_followers($this->actor, 0, null);
@@ -245,9 +248,6 @@ class Activitypub_postman
                     $this->actor_uri,
                     Activitypub_notice::notice_to_array($notice)
                 );
-        if (isset($notice->reply_to)) {
-            $data["object"]["reply_to"] = $notice->getParent()->getUrl();
-        }
         $data = json_encode($data, JSON_UNESCAPED_SLASHES);
 
         foreach ($this->to_inbox() as $inbox) {
