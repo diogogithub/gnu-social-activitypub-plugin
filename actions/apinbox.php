@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -55,16 +54,50 @@ class apInboxAction extends ManagedAction
             ActivityPubReturn::error('Only POST requests allowed.');
         }
 
-        common_debug('ActivityPub Shared Inbox: Received a POST request.');
+        common_debug('ActivityPub Inbox: Received a POST request.');
         $data = file_get_contents('php://input');
-        common_debug('ActivityPub Shared Inbox: Request contents: '.$data);
+        common_debug('ActivityPub Inbox: Request contents: '.$data);
         $data = json_decode(file_get_contents('php://input'), true);
 
+        if (!isset($data['actor'])) {
+            ActivityPubReturn::error('Actor not found in the request.');
+        }
+
+        $actor = ActivityPub_explorer::get_profile_from_url($data['actor']);
+        $actor_public_key = new Activitypub_rsa();
+        $actor_public_key = $actor_public_key->ensure_public_key($actor);
+
+        common_debug('ActivityPub Inbox: HTTP Signature: Validation will now start!');
+
+        $headers = $this->get_all_headers();
+        common_debug('ActivityPub Inbox: Request Headers: '.print_r($headers, true));
+
+        // TODO: Validate HTTP Signature, if it fails, attempt once with profile update
+
+        common_debug('ActivityPub Inbox: HTTP Signature: Authorized request. Will now start the inbox handler.');
+
         try {
-            new Activitypub_inbox_handler($data);
+            new Activitypub_inbox_handler($data, $actor);
             ActivityPubReturn::answer();
         } catch (Exception $e) {
             ActivityPubReturn::error($e->getMessage());
         }
+    }
+
+    /**
+     * Get all HTTP header key/values as an associative array for the current request.
+     *
+     * @author PHP Manual Contributed Notes <joyview@gmail.com>
+     * @return string[string] The HTTP header key/value pairs.
+     */
+    private function get_all_headers()
+    {
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) == 'HTTP_') {
+                $headers[strtolower(str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5))))))] = $value;
+            }
+        }
+        return $headers;
     }
 }

@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -204,7 +203,7 @@ class Activitypub_explorer
         common_debug('ActivityPub Explorer: Trying to grab a remote actor for '.$url);
         if (!isset($this->temp_res)) {
             $client    = new HTTPClient();
-            $headers   = array();
+            $headers   = [];
             $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
             $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
             $response  = $client->get($url, $headers);
@@ -259,10 +258,10 @@ class Activitypub_explorer
         // Avatar
         if (isset($res['icon']['url'])) {
             try {
-                $this->_store_avatar($profile, $res['icon']['url']);
+                $this->update_avatar($profile, $res['icon']['url']);
             } catch (Exception $e) {
                 // Let the exception go, it isn't a serious issue
-                common_debug('An error ocurred while grabbing remote avatar'.$e->getMessage());
+                common_debug('ActivityPub Explorer: An error ocurred while grabbing remote avatar: '.$e->getMessage());
             }
         }
 
@@ -278,7 +277,7 @@ class Activitypub_explorer
      * @return Avatar    The Avatar we have on disk.
      * @throws Exception in various failure cases
      */
-    private function _store_avatar(Profile $profile, $url)
+    public static function update_avatar(Profile $profile, $url)
     {
         common_debug('ActivityPub Explorer: Started grabbing remote avatar from: '.$url);
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
@@ -388,7 +387,7 @@ class Activitypub_explorer
     public static function get_actor_inboxes_uri($url)
     {
         $client    = new HTTPClient();
-        $headers   = array();
+        $headers   = [];
         $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
         $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
         $response  = $client->get($url, $headers);
@@ -416,7 +415,7 @@ class Activitypub_explorer
     private function travel_collection($url)
     {
         $client    = new HTTPClient();
-        $headers   = array();
+        $headers   = [];
         $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
         $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
         $response  = $client->get($url, $headers);
@@ -438,5 +437,28 @@ class Activitypub_explorer
         }
 
         return true;
+    }
+
+    /**
+     * Get a remote user array from its URL (this function is only used for
+     * profile updating and shall not be used for anything else)
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param string $url User's url
+     * @throws Exception
+     */
+    public static function get_remote_user_activity($url)
+    {
+        $client    = new HTTPClient();
+        $headers   = [];
+        $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
+        $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
+        $response  = $client->get($url, $headers);
+        $res = json_decode($response->getBody(), true);
+        if (Activitypub_explorer::validate_remote_response($res)) {
+            common_debug('ActivityPub Explorer: Found a valid remote actor for '.$url);
+            return $res;
+        }
+        throw new Exception('ActivityPub Explorer: Failed to get activity.');
     }
 }

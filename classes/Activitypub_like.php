@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -51,10 +50,7 @@ class Activitypub_like extends Managed_DataObject
     public static function like_to_array($actor, $object)
     {
         $res = [
-            '@context' => [
-                    'https://www.w3.org/ns/activitystreams',
-                    'https://w3id.org/security/v1'
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             'id'     => common_root_url().'like_from_'.urlencode($actor).'_to_'.urlencode($object),
             "type"   => "Like",
             "actor"  => $actor,

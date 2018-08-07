@@ -40,9 +40,13 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 ## Credits
 
 * **[Diogo Cordeiro](https://www.diogo.site/)**
-* **[Daniel Supernault](https://github.com/dansup)**
 
 See also the list of [contributors](https://git.gnu.io/gnu/GS-ActivityPub-Plugin/contributors) who participated in this project.
+
+## Extra special thanks
+
+* **[Daniel Supernault](https://github.com/dansup)**
+* **[Mikael Nordfeldth](https://mmn-o.se/)**
 
 ## License
 

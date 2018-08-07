@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -124,7 +123,7 @@ class apActorOutboxAction extends ManagedAction
             // TODO: Handle other types
             if ($note->object_type == 'http://activitystrea.ms/schema/1.0/note') {
                 $notices[] = Activitypub_create::create_to_array(
-                    ActivityPubPlugin::actor_uri($note->getProfile()), 
+                    ActivityPubPlugin::actor_uri($note->getProfile()),
                     Activitypub_notice::notice_to_array($note)
                 );
             }

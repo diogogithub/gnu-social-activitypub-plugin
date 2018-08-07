@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -108,7 +107,7 @@ class apActorFollowersAction extends ManagedAction
     }
 
     /**
-     * Generates a list of followers for a given profile.
+     * Generates a list of stalkers for a given profile.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $profile
@@ -116,7 +115,7 @@ class apActorFollowersAction extends ManagedAction
      * @param int32 $limit
      * @return Array of URIs
      */
-    public function generate_followers($profile, $since, $limit)
+    public static function generate_followers($profile, $since, $limit)
     {
         /* Fetch Followers */
         try {
@@ -130,6 +129,7 @@ class apActorFollowersAction extends ManagedAction
         while ($sub->fetch()) {
             $subs[] = ActivityPubPlugin::actor_uri($sub);
         }
+
         return $subs;
     }
 }

@@ -19,7 +19,6 @@
  *
  * @category  Plugin
  * @package   GNUsocial
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
@@ -72,11 +71,8 @@ class Activitypub_notice extends Managed_DataObject
         $to[]= 'https://www.w3.org/ns/activitystreams#Public';
 
         $item = [
-            '@context' => [
-                    'https://www.w3.org/ns/activitystreams',
-                    'https://w3id.org/security/v1'
-            ],
-            'id'           => $notice->getUrl(),
+            '@context' => 'https://www.w3.org/ns/activitystreams',
+            'id'           => common_local_url('apNotice', ['id' => $notice->getID()]),
             'type'         => 'Note',
             'published'    => str_replace(' ', 'T', $notice->getCreated()).'Z',
             'url'          => $notice->getUrl(),
@@ -93,7 +89,7 @@ class Activitypub_notice extends Managed_DataObject
 
         // Is this a reply?
         if (!empty($notice->reply_to)) {
-            $item['inReplyTo'] = Notice::getById($notice->reply_to)->getUrl();
+            $item['inReplyTo'] = common_local_url('apNotice', ['id' => $notice->getID()]);
             $item['inReplyToAtomUri'] = Notice::getById($notice->reply_to)->getUrl();
         }
 
@@ -124,7 +120,6 @@ class Activitypub_notice extends Managed_DataObject
         $id      = $object['id'];         // int32
         $url     = $object['url'];        // string
         $content = $object['content'];    // string
-        $cc      = $object['cc'];         // array|string
 
         // possible keys: ['inReplyTo', 'latitude', 'longitude', 'attachment']
         $settings = [];
@@ -192,43 +187,41 @@ class Activitypub_notice extends Managed_DataObject
         if (isset($settings['inReplyTo'])) {
             try {
                 $inReplyTo = ActivityPubPlugin::grab_notice_from_url($settings['inReplyTo']);
+                $act->context->replyToID  = $inReplyTo->getUri();
+                $act->context->replyToUrl = $inReplyTo->getUrl();
             } catch (Exception $e) {
-                throw new Exception('Invalid Object inReplyTo value: '.$e->getMessage());
+                // It failed to grab, maybe we got this note from another source
+                // (e.g.: OStatus) that handles this differently or we really
+                // failed to get it...
+                // Welp, nothing that we can do about, let's
+                // just fake we don't have such notice.
             }
-            $act->context->replyToID  = $inReplyTo->getUri();
-            $act->context->replyToUrl = $inReplyTo->getUrl();
         } else {
             $inReplyTo = null;
         }
 
-        $discovery = new Activitypub_explorer;
-
-        // Generate Cc objects
-        $cc_profiles = [];
-        if (is_array($cc)) {
-            // Remove duplicates from Cc actors set
-            array_unique($cc);
-            foreach ($cc as $cc_url) {
-                try {
-                    $cc_profiles = array_merge($cc_profiles, $discovery->lookup($cc_url));
-                } catch (Exception $e) {
-                    // Invalid actor found, just let it go. // TODO: Fallback to OStatus
+        // Mentions
+        $mentions = [];
+        if (isset($object['tag']) && is_array($object['tag'])) {
+            foreach ($object['tag'] as $tag) {
+                if ($tag['type'] == 'Mention') {
+                    $mentions[] = $tag['href'];
                 }
             }
-        } elseif (empty($cc) || in_array($cc, ACTIVITYPUB_PUBLIC_TO)) {
-            // No need to do anything else at this point, let's just break out the if
-        } else {
+        }
+        $mentions_profiles = [];
+        $discovery = new Activitypub_explorer;
+        foreach ($mentions as $mention) {
             try {
-                $cc_profiles = $discovery->lookup($cc);
+                $mentions_profiles[] = $discovery->lookup($mention)[0];
             } catch (Exception $e) {
                 // Invalid actor found, just let it go. // TODO: Fallback to OStatus
             }
         }
-
         unset($discovery);
 
-        foreach ($cc_profiles as $cp) {
-            $act->context->attention[ActivityPubPlugin::actor_uri($cp)] = 'http://activitystrea.ms/schema/1.0/person';
+        foreach ($mentions_profiles as $mp) {
+            $act->context->attention[ActivityPubPlugin::actor_uri($mp)] = 'http://activitystrea.ms/schema/1.0/person';
         }
 
         // Add location if that is set

@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -96,10 +95,7 @@ class Activitypub_profile extends Managed_DataObject
         $public_key = $rsa->ensure_public_key($profile);
         unset($rsa);
         $res = [
-            '@context' => [
-                "https://www.w3.org/ns/activitystreams",
-                "https://w3id.org/security/v1"
-            ],
+            '@context' => 'https://www.w3.org/ns/activitystreams',
             'id'                => $uri,
             'type'              => 'Person',
             'following'         => common_local_url('apActorFollowing', ['id' => $id]),
@@ -242,8 +238,12 @@ class Activitypub_profile extends Managed_DataObject
      */
     private static function create_from_local_profile(Profile $profile)
     {
-        $url = $profile->getURL();
+        $url = $profile->getUri();
         $inboxes = Activitypub_explorer::get_actor_inboxes_uri($url);
+
+        if ($inboxes == null) {
+            throw new Exception('This is not an ActivityPub user thus AProfile is politely refusing to proceed.');
+        }
 
         $aprofile->created = $aprofile->modified = common_sql_now();
 
@@ -412,5 +412,58 @@ class Activitypub_profile extends Managed_DataObject
 
         // TRANS: Exception. %s is a webfinger address.
         throw new Exception(sprintf(_m('Could not find a valid profile for "%s".'), $addr));
+    }
+
+    /**
+     * Update remote user profile in local instance
+     * Depends on do_update
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param array $res remote response
+     * @return Profile remote Profile object
+     */
+    public static function update_profile($aprofile, $res)
+    {
+        // ActivityPub Profile
+        $aprofile->uri            = $res['id'];
+        $aprofile->nickname       = $res['preferredUsername'];
+        $aprofile->fullname       = isset($res['name']) ? $res['name'] : null;
+        $aprofile->bio            = isset($res['summary']) ? substr(strip_tags($res['summary']), 0, 1000) : null;
+        $aprofile->inboxuri       = $res['inbox'];
+        $aprofile->sharedInboxuri = isset($res['endpoints']['sharedInbox']) ? $res['endpoints']['sharedInbox'] : $res['inbox'];
+
+        $profile = $aprofile->local_profile();
+
+        $profile->modified = $aprofile->modified = common_sql_now();
+
+        $fields = [
+                    'uri'      => 'profileurl',
+                    'nickname' => 'nickname',
+                    'fullname' => 'fullname',
+                    'bio'      => 'bio'
+                    ];
+
+        foreach ($fields as $af => $pf) {
+            $profile->$pf = $aprofile->$af;
+        }
+
+        // Profile
+        $profile->update();
+        $aprofile->update();
+
+        // Public Key
+        Activitypub_rsa::update_public_key($profile, $res['publicKey']['publicKeyPem']);
+
+        // Avatar
+        if (isset($res['icon']['url'])) {
+            try {
+                Activitypub_explorer::update_avatar($profile, $res['icon']['url']);
+            } catch (Exception $e) {
+                // Let the exception go, it isn't a serious issue
+                common_debug('An error ocurred while grabbing remote avatar'.$e->getMessage());
+            }
+        }
+
+        return $profile;
     }
 }

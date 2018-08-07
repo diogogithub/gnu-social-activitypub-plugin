@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -30,7 +29,7 @@ if (!defined('GNUSOCIAL')) {
 }
 
 // Ensure proper timezone
-date_default_timezone_set('UTC');
+date_default_timezone_set('GMT');
 
 // Import required files by the plugin
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
@@ -106,8 +105,8 @@ class ActivityPubPlugin extends Plugin
             // Look for a local notice (unfortunately GNU Social doesn't
             // provide this functionality natively)
             try {
-                $candidate = Notice::getByID(intval(substr($url, strlen(common_local_url('shownotice', ['notice' => ''])))));
-                if ($candidate->getUrl() == $url) { // Sanity check
+                $candidate = Notice::getByID(intval(substr($url, (strlen(common_local_url('apNotice', ['id' => 0]))-1))));
+                if (common_local_url('apNotice', ['id' => $candidate->getID()]) === $url) { // Sanity check
                     return $candidate;
                 } else {
                     common_debug('ActivityPubPlugin Notice Grabber: '.$candidate->getUrl(). ' is different of '.$url);
@@ -151,49 +150,49 @@ class ActivityPubPlugin extends Plugin
                 ['nickname' => Nickname::DISPLAY_FMT],
                 'apActorProfile'
             );
-
-            ActivityPubURLMapperOverwrite::variable(
-                $m,
-                'notice/:id',
-                ['id'     => '[0-9]+'],
-                'apNotice'
-            );
         }
+
+        // No .json here for convenience purposes on Notice grabber
+        $m->connect(
+            'note/:id',
+            ['action' => 'apNotice'],
+            ['id'     => '[0-9]+']
+        );
 
         $m->connect(
             'user/:id/liked.json',
-                    ['action'    => 'apActorLiked'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apActorLiked'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'user/:id/followers.json',
-                    ['action'    => 'apActorFollowers'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apActorFollowers'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'user/:id/following.json',
-                    ['action'    => 'apActorFollowing'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apActorFollowing'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'user/:id/inbox.json',
-                    ['action' => 'apInbox'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apInbox'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'user/:id/outbox.json',
-                    ['action' => 'apActorOutbox'],
-                    ['id' => '[0-9]+']
-                );
+            ['action' => 'apActorOutbox'],
+            ['id' => '[0-9]+']
+        );
 
         $m->connect(
             'inbox.json',
-                    ['action' => 'apInbox']
-                );
+            ['action' => 'apInbox']
+        );
     }
 
     /**
@@ -206,7 +205,7 @@ class ActivityPubPlugin extends Plugin
     {
         $versions[] = [ 'name' => 'ActivityPub',
                                 'version' => GNUSOCIAL_VERSION,
-                                'author' => 'Diogo Cordeiro, Daniel Supernault',
+                                'author' => 'Diogo Cordeiro',
                                 'homepage' => 'https://www.gnu.org/software/social/',
                                 'rawdescription' => 'Adds ActivityPub Support'];
 
@@ -214,8 +213,7 @@ class ActivityPubPlugin extends Plugin
     }
 
     /**
-     * Dummy string on AccountProfileBlock stating that ActivityPub is active
-     * this is more of a placeholder for eventual useful stuff ._.
+     * Adds an indicator on Remote ActivityPub profiles.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @return boolean hook return value
@@ -226,8 +224,8 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
         try {
-            $aprofile = Activitypub_profile::getKV('profile_id', $profile->id);
-        } catch (NoResultException $e) {
+            $aprofile = Activitypub_profile::from_profile($profile);
+        } catch (Exception $e) {
             // Not a remote ActivityPub_profile! Maybe some other network
             // that has imported a non-local user (e.g.: OStatus)?
             return true;
@@ -278,7 +276,7 @@ class ActivityPubPlugin extends Plugin
         }
 
         // Look for profile URLs, with or without scheme:
-        $urls = array();
+        $urls = [];
         if (preg_match('!^https?://((?:\w+\.)*\w+(?:\w+\-\w+)*\.\w+(?:/\w+)+)$!', $arg)) {
             $urls[] = $arg;
         }
@@ -336,7 +334,7 @@ class ActivityPubPlugin extends Plugin
      */
     public static function extractUrlMentions($text, $preMention='@')
     {
-        $wmatches = array();
+        $wmatches = [];
         // In the regexp below we need to match / _before_ URL_REGEX_VALID_PATH_CHARS because it otherwise gets merged
         // with the TLD before (but / is in URL_REGEX_VALID_PATH_CHARS anyway, it's just its positioning that is important)
         $result = preg_match_all(
@@ -386,7 +384,7 @@ class ActivityPubPlugin extends Plugin
      */
     public function onEndFindMentions(Profile $sender, $text, &$mentions)
     {
-        $matches = array();
+        $matches = [];
 
         foreach (self::extractWebfingerIds($text, '@') as $wmatch) {
             list($target, $pos) = $wmatch;
@@ -547,7 +545,7 @@ class ActivityPubPlugin extends Plugin
         try {
             $other = Activitypub_profile::from_profile($other);
         } catch (Exception $e) {
-            return true;
+            return true; // Let other plugin handle this instead
         }
 
         $postman = new Activitypub_postman($profile, array($other));
@@ -574,7 +572,7 @@ class ActivityPubPlugin extends Plugin
         try {
             $other = Activitypub_profile::from_profile($other);
         } catch (Exception $e) {
-            return true;
+            return true; // Let other plugin handle this instead
         }
 
         $postman = new Activitypub_postman($profile, array($other));
@@ -585,7 +583,7 @@ class ActivityPubPlugin extends Plugin
     }
 
     /**
-     * Notify remote users when their notices get favorited.
+     * Notify remote users when their notices get favourited.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $profile of local user doing the faving
@@ -600,7 +598,7 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
 
-        $other = array();
+        $other = [];
         try {
             $other[] = Activitypub_profile::from_profile($notice->getProfile());
         } catch (Exception $e) {
@@ -644,7 +642,7 @@ class ActivityPubPlugin extends Plugin
     }
 
     /**
-     * Notify remote users when their notices get de-favorited.
+     * Notify remote users when their notices get de-favourited.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $profile of local user doing the de-faving
@@ -659,7 +657,7 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
 
-        $other = array();
+        $other = [];
         try {
             $other[] = Activitypub_profile::from_profile($notice->getProfile());
         } catch (Exception $e) {
@@ -718,7 +716,7 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
 
-        $other = array();
+        $other = [];
 
         foreach ($notice->getAttentionProfiles() as $to_profile) {
             try {
@@ -765,42 +763,10 @@ class ActivityPubPlugin extends Plugin
     {
         assert($notice->id > 0);        // Ignore if not a valid notice
 
-        $profile = Profile::getKV($notice->profile_id);
+        $profile = $notice->getProfile();
 
         if (!$profile->isLocal()) {
             return true;
-        }
-
-        $other = array();
-        try {
-            $other[] = Activitypub_profile::from_profile($notice->getProfile());
-        } catch (Exception $e) {
-            // Local user can be ignored
-        }
-        foreach ($notice->getAttentionProfiles() as $to_profile) {
-            try {
-                $other[] = Activitypub_profile::from_profile($to_profile);
-            } catch (Exception $e) {
-                // Local user can be ignored
-            }
-        }
-
-        // Is Announce
-        if ($notice->isRepeat()) {
-            $repeated_notice = Notice::getKV('id', $notice->repeat_of);
-            if ($repeated_notice instanceof Notice) {
-                try {
-                    $other[] = Activitypub_profile::from_profile($repeated_notice->getProfile());
-                } catch (Exception $e) {
-                    // Local user can be ignored
-                }
-
-                $postman = new Activitypub_postman($profile, $other);
-
-                // That was it
-                $postman->announce($repeated_notice);
-                return true;
-            }
         }
 
         // Ignore for activity/non-post-verb notices
@@ -816,7 +782,16 @@ class ActivityPubPlugin extends Plugin
             return true;
         }
 
-        // Create
+        $other = [];
+        foreach ($notice->getAttentionProfiles() as $mention) {
+            try {
+                $other[] = Activitypub_profile::from_profile($mention);
+            } catch (Exception $e) {
+                // Local user can be ignored
+            }
+        }
+
+        // Is a reply?
         if ($notice->reply_to) {
             try {
                 $other[] = Activitypub_profile::from_profile($notice->getParent()->getProfile());
@@ -824,10 +799,9 @@ class ActivityPubPlugin extends Plugin
                 // Local user can be ignored
             }
             try {
-                $mentions = $notice->getParent()->getAttentionProfiles();
-                foreach ($mentions as $to_profile) {
+                foreach ($notice->getParent()->getAttentionProfiles() as $mention) {
                     try {
-                        $other[] = Activitypub_profile::from_profile($to_profile);
+                        $other[] = Activitypub_profile::from_profile($mention);
                     } catch (Exception $e) {
                         // Local user can be ignored
                     }
@@ -839,10 +813,27 @@ class ActivityPubPlugin extends Plugin
                 common_log(LOG_ERR, "Parent notice's author not found: ".$e->getMessage());
             }
         }
-        $postman = new Activitypub_postman($profile, $other);
+
+        // Is an Announce?
+        if ($notice->isRepeat()) {
+            $repeated_notice = Notice::getKV('id', $notice->repeat_of);
+            if ($repeated_notice instanceof Notice) {
+                try {
+                    $other[] = Activitypub_profile::from_profile($repeated_notice->getProfile());
+                } catch (Exception $e) {
+                    // Local user can be ignored
+                }
+
+                // That was it
+                $postman = new Activitypub_postman($profile, $other);
+                $postman->announce($repeated_notice);
+                return true;
+            }
+        }
 
         // That was it
-        $postman->create($notice);
+        $postman = new Activitypub_postman($profile, $other);
+        $postman->create_note($notice);
         return true;
     }
 

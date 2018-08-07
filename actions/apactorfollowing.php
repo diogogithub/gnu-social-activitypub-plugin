@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -108,7 +107,7 @@ class apActorFollowingAction extends ManagedAction
     }
 
     /**
-     * Generates a list of people following given profile.
+     * Generates the list of those a given profile is stalking.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $profile

@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -60,27 +59,37 @@ class Activitypub_postman
      * @param Profile $from Profile of sender
      * @param Array of Activitypub_profile $to destinataries
      */
-    public function __construct($from, $to = [])
+    public function __construct($from, $to)
     {
         $this->actor = $from;
+        $discovery = new Activitypub_explorer();
         $this->to = $to;
+        $followers = apActorFollowersAction::generate_followers($this->actor, 0, null);
+        foreach ($followers as $sub) {
+            try {
+                $to[]= Activitypub_profile::from_profile($discovery->lookup($sub)[0]);
+            } catch (Exception $e) {
+                // Not an ActivityPub Remote Follower, let it go
+            }
+        }
+        unset($discovery);
+
         $this->actor_uri = ActivityPubPlugin::actor_uri($this->actor);
 
         $actor_private_key = new Activitypub_rsa();
         $actor_private_key = $actor_private_key->get_private_key($this->actor);
 
         $context = new Context([
-            'keys' => [$this->actor_uri."#public-key" => $actor_private_key],
+            'keys' => [$this->actor_uri.'#public-key' => $actor_private_key],
             'algorithm' => 'rsa-sha256',
             'headers' => ['(request-target)', 'date', 'content-type', 'accept', 'user-agent'],
         ]);
 
-        $this->to = $to;
         $this->headers = [
             'content-type' => 'application/activity+json',
             'accept'       => 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
             'user-agent'   => 'GNUSocialBot v0.1 - https://gnu.io/social',
-            'date'         => date('D, d M Y h:i:s') . ' GMT'
+            'date'         => gmdate('D, d M Y H:i:s \G\M\T', time())
         ];
 
         $handlerStack = GuzzleHttpSignatures::defaultHandlerFromContext($context);
@@ -228,15 +237,12 @@ class Activitypub_postman
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Notice $notice
      */
-    public function create($notice)
+    public function create_note($notice)
     {
         $data = Activitypub_create::create_to_array(
                     $this->actor_uri,
                     Activitypub_notice::notice_to_array($notice)
                 );
-        if (isset($notice->reply_to)) {
-            $data["object"]["reply_to"] = $notice->getParent()->getUrl();
-        }
         $data = json_encode($data, JSON_UNESCAPED_SLASHES);
 
         foreach ($this->to_inbox() as $inbox) {

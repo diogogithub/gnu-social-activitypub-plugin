@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -49,8 +48,9 @@ class Activitypub_inbox_handler
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Array $activity Activity we are receiving
+     * @param Profile $actor_profile Actor originating the activity
      */
-    public function __construct($activity)
+    public function __construct($activity, $actor_profile = null)
     {
         $this->activity = $activity;
         $this->object = $activity['object'];
@@ -59,7 +59,11 @@ class Activitypub_inbox_handler
         $this->validate_activity();
 
         // Get Actor's Profile
-        $this->actor = ActivityPub_explorer::get_profile_from_url($this->activity['actor']);
+        if (!is_null($actor_profile)) {
+            $this->actor = $actor_profile;
+        } else {
+            $this->actor = ActivityPub_explorer::get_profile_from_url($this->activity['actor']);
+        }
 
         // Handle the Activity
         $this->process();
@@ -98,7 +102,7 @@ class Activitypub_inbox_handler
             case 'Like':
             case 'Announce':
                 if (!filter_var($this->object, FILTER_VALIDATE_URL)) {
-                    throw new Exception("Object is not a valid Object URI for Activity.");
+                    throw new Exception('Object is not a valid Object URI for Activity.');
                 }
                 break;
             case 'Undo':

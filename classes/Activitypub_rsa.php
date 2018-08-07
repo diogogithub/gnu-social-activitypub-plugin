@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -84,16 +83,15 @@ class Activitypub_rsa extends Managed_DataObject
         return $apRSA->private_key;
     }
 
-
     /**
      * Guarantees a Public Key for a given profile.
      *
      * @author Diogo Cordeiro <diogo@fc.up.pt>
      * @param Profile $profile
      * @return string The public key
-     * @throws Exception It should never occur
+     * @throws ServerException It should never occur, but if so, we break everything!
      */
-    public function ensure_public_key($profile)
+    public function ensure_public_key($profile, $fetch = true)
     {
         $this->profile_id = $profile->getID();
         $apRSA = self::getKV('profile_id', $this->profile_id);
@@ -103,7 +101,14 @@ class Activitypub_rsa extends Managed_DataObject
                 self::generate_keys($this->private_key, $this->public_key);
                 $this->store_keys();
             } else {
-                throw new Exception('No Keys for this Profile. That\'s odd.');
+                // This should never happen, but try to recover!
+                if ($fetch) {
+                    $res = Activitypub_explorer::get_remote_user_activity(ActivityPubPlugin::actor_uri($profile));
+                    Activitypub_rsa::update_public_key($profile, $res['publicKey']['publicKeyPem']);
+                    return ensure_public_key($profile, false);
+                } else {
+                    throw new ServerException('Activitypub_rsa: Failed to find keys for given profile. That should have not happened!');
+                }
             }
         }
         return $apRSA->public_key;
@@ -121,7 +126,6 @@ class Activitypub_rsa extends Managed_DataObject
         $this->created = $this->modified = common_sql_now();
         $ok = $this->insert();
         if ($ok === false) {
-            $profile->query('ROLLBACK');
             throw new ServerException('Cannot save ActivityPub RSA.');
         }
     }
@@ -151,5 +155,24 @@ class Activitypub_rsa extends Managed_DataObject
         $pubKey = openssl_pkey_get_details($res);
         $public_key = $pubKey["key"];
         unset($pubKey);
+    }
+
+    /**
+     * Update public key.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param Profile $profile
+     * @param string $public_key
+     */
+    public static function update_public_key($profile, $public_key)
+    {
+        // Public Key
+        $apRSA = new Activitypub_rsa();
+        $apRSA->profile_id = $profile->getID();
+        $apRSA->public_key = $public_key;
+        $apRSA->modified = common_sql_now();
+        if(!$apRSA->update()) {
+            $apRSA->insert();
+        }
     }
 }
