@@ -83,7 +83,6 @@ class Activitypub_rsa extends Managed_DataObject
         return $apRSA->private_key;
     }
 
-
     /**
      * Guarantees a Public Key for a given profile.
      *
@@ -104,7 +103,8 @@ class Activitypub_rsa extends Managed_DataObject
             } else {
                 // This should never happen, but try to recover!
                 if ($fetch) {
-                    // TODO: Call profile updater
+                    $res = Activitypub_explorer::get_remote_user_activity(ActivityPubPlugin::actor_uri($profile));
+                    Activitypub_rsa::update_public_key($profile, $res['publicKey']['publicKeyPem']);
                     return ensure_public_key($profile, false);
                 } else {
                     throw new ServerException('Activitypub_rsa: Failed to find keys for given profile. That should have not happened!');
@@ -155,5 +155,24 @@ class Activitypub_rsa extends Managed_DataObject
         $pubKey = openssl_pkey_get_details($res);
         $public_key = $pubKey["key"];
         unset($pubKey);
+    }
+
+    /**
+     * Update public key.
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param Profile $profile
+     * @param string $public_key
+     */
+    public static function update_public_key($profile, $public_key)
+    {
+        // Public Key
+        $apRSA = new Activitypub_rsa();
+        $apRSA->profile_id = $profile->getID();
+        $apRSA->public_key = $public_key;
+        $apRSA->modified = common_sql_now();
+        if(!$apRSA->update()) {
+            $apRSA->insert();
+        }
     }
 }

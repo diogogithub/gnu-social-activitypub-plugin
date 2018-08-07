@@ -438,4 +438,27 @@ class Activitypub_explorer
 
         return true;
     }
+
+    /**
+     * Get a remote user array from its URL (this function is only used for
+     * profile updating and shall not be used for anything else)
+     *
+     * @author Diogo Cordeiro <diogo@fc.up.pt>
+     * @param string $url User's url
+     * @throws Exception
+     */
+    public static function get_remote_user_activity($url)
+    {
+        $client    = new HTTPClient();
+        $headers   = [];
+        $headers[] = 'Accept: application/ld+json; profile="https://www.w3.org/ns/activitystreams"';
+        $headers[] = 'User-Agent: GNUSocialBot v0.1 - https://gnu.io/social';
+        $response  = $client->get($url, $headers);
+        $res = json_decode($response->getBody(), true);
+        if (Activitypub_explorer::validate_remote_response($res)) {
+            common_debug('ActivityPub Explorer: Found a valid remote actor for '.$url);
+            return $res;
+        }
+        throw new Exception('ActivityPub Explorer: Failed to get activity.');
+    }
 }
