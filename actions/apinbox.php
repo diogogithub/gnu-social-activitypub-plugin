@@ -37,6 +37,10 @@ if (!defined('GNUSOCIAL')) {
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      http://www.gnu.org/software/social/
  */
+
+use GuzzleHttp\Psr7;
+use HttpSignatures\Context;
+
 class apInboxAction extends ManagedAction
 {
     protected $needLogin = false;
@@ -71,8 +75,37 @@ class apInboxAction extends ManagedAction
 
         $headers = $this->get_all_headers();
         common_debug('ActivityPub Inbox: Request Headers: '.print_r($headers, true));
+        try {
+            $res = HTTPSignature::parse($headers);
+            common_debug('ActivityPub Inbox: Request Res: '.print_r($res, true));
+        } catch (HttpSignatureError $e) {
+            common_debug('ActivityPub Inbox: HTTP Signature Error: '. $e->getMessage());
+            ActivityPubReturn::error('HTTP Signature Error: '. $e->getMessage());
+        } catch (Exception $e) {
+            ActivityPubReturn::error($e->getMessage());
+        }
 
-        // TODO: Validate HTTP Signature, if it fails, attempt once with profile update
+        /*if (HTTPSignature::verify($res,
+                $actor_public_key, 'rsa') == FALSE) {
+           common_debug('ActivityPub Inbox: Could not authorize request.');
+           ActivityPubReturn::error('Unauthorized.', 403);
+        }*/
+
+        $context = new Context([
+            'keys' => [$res['params']['keyId'] => $actor_public_key],
+            'algorithm' => $res['params']['algorithm'],
+            'headers' => $res['headers'],
+        ]);
+
+        $request = new Psr7\Request($_SERVER['REQUEST_METHOD'],
+                (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]",
+                $headers);
+
+        if ($context->verifier()->isValid($request) == false)
+        {
+            common_debug('ActivityPub Inbox: HTTP Signature: Unauthorized request.');
+            ActivityPubReturn::error('Unauthorized.', 403);
+        }
 
         common_debug('ActivityPub Inbox: HTTP Signature: Authorized request. Will now start the inbox handler.');
 
