@@ -20,7 +20,6 @@
  * @category  Plugin
  * @package   GNUsocial
  * @author    Diogo Cordeiro <diogo@fc.up.pt>
- * @author    Daniel Supernault <danielsupernault@gmail.com>
  * @copyright 2018 Free Software Foundation http://fsf.org
  * @license   http://www.fsf.org/licensing/licenses/agpl-3.0.html GNU Affero General Public License version 3.0
  * @link      https://www.gnu.org/software/social/
@@ -73,7 +72,7 @@ class apInboxAction extends ManagedAction
         $headers = $this->get_all_headers();
         common_debug('ActivityPub Inbox: Request Headers: '.print_r($headers, true));
 
-        // TODO: Validate HTTP Signature
+        // TODO: Validate HTTP Signature, if it fails, attempt once with profile update
 
         common_debug('ActivityPub Inbox: HTTP Signature: Authorized request. Will now start the inbox handler.');
 
