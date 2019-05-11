@@ -1,7 +1,5 @@
-# ActivityPub GNU/Social Plugin
+# ActivityPub GNU social Plugin
 
-Warning: This is still a work in progress, not every ActivityPub property is fully implemented yet.
+This plugin development was moved to [https://notabug.org/diogo/gnu-social/src/activitypub/plugins/ActivityPub](https://notabug.org/diogo/gnu-social/src/activitypub/plugins/ActivityPub)
 
-The stable codebase is on the [dev branch](https://notabug.org/diogo/gnu-social-activitypub-plugin/src/dev)
-
-The documentation is available at [https://notabug.org/diogo/gnu-social-activitypub-plugin-doc](https://notabug.org/diogo/gnu-social-activitypub-plugin-doc)
+This repository is just an archive of the initial work.
